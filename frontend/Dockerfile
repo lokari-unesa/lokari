@@ -1,19 +1,27 @@
-FROM node:20-alpine
+# syntax=docker/dockerfile:1
 
-# Set working directory
+# ============ BASE — dependensi & kode sumber ============
+FROM node:22-slim AS base
 WORKDIR /app
-
-# Salin file konfigurasi package
 COPY package.json package-lock.json* ./
-
-# Install dependensi
 RUN npm install
-
-# Salin seluruh kode frontend
 COPY . .
 
-# Ekspos port yang digunakan oleh SvelteKit (sesuai VITE_PORT)
+# ============ DEV — vite dev server ============
+FROM base AS dev
 EXPOSE 5180
-
-# Jalankan server dalam mode development dan pastikan terekspos ke luar container (0.0.0.0)
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+# ============ BUILD — bundle produksi (adapter-node) ============
+FROM base AS build
+RUN npm run build
+
+# ============ PROD — server SvelteKit adapter-node ============
+FROM node:22-alpine AS prod
+WORKDIR /app
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=5180
+COPY --from=build /app/build ./build
+COPY --from=build /app/package.json ./
+COPY --from=build /app/node_modules ./node_modules
+EXPOSE 5180
+CMD ["node", "build"]

@@ -27,10 +27,9 @@ Anda bisa memilih salah satu dari dua cara di bawah ini untuk menghidupkan datab
 
 #### Opsi A: Menggunakan Docker (Sangat Direkomendasikan)
 Cara paling mudah tanpa perlu menginstal PostgreSQL secara manual. Pastikan Docker Desktop menyala.
-1. Masuk ke folder backend: `cd backend`
-2. Jalankan mesin database: `docker-compose up -d`
-*(Database akan berjalan di port `5433`)*
-*Perintah stop/start: `docker stop lokari_db_vector` / `docker start lokari_db_vector`.*
+1. Dari root proyek, jalankan database saja: `docker compose up -d db`
+   *(atau `docker compose up -d --build` untuk full-stack dev, lihat bagian Docker di bawah)*
+*(Database akan berjalan di port host `5433`).*
 
 #### Opsi B: Instalasi Manual (Native / Tanpa Docker)
 Jika Anda tidak menggunakan Docker, instal secara manual sesuai Sistem Operasi Anda:
@@ -54,17 +53,40 @@ sudo apt install postgresql-16-pgvector
 ---
 
 ### 3. Konfigurasi Backend (Golang)
-Masuk ke folder `backend`, buat file bernama `.env` (atau salin jika sudah ada), dan isi dengan:
+Masuk ke folder `backend`, salin contoh env lalu isi nilai aslinya:
+```bash
+cp backend/.env.example backend/.env   # lalu edit nilainya
+```
+
+Isi `backend/.env` (file ini TIDAK di-commit):
 ```env
 PORT=5181
-# Jika pakai Docker (Port 5433):
+# Jika pakai Docker (host port 5433 -> container 5432):
 DATABASE_URL=postgresql://postgres:root@127.0.0.1:5433/lokari_db?sslmode=disable
 # Jika install manual lokal (Port 5432):
 # DATABASE_URL=postgresql://postgres:root@127.0.0.1:5432/lokari_db?sslmode=disable
 
-DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-HF_TOKEN= # (Opsional jika API HuggingFace Anda belum terkena limit)
+# AI untuk rangkuman berita/alert (provider OpenAI-compatible: OpenRouter/Groq/DeepSeek)
+AI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+AI_BASE_URL=https://openrouter.ai/api/v1
+AI_MODEL=openrouter/free
+
+# AI untuk vector embeddings (semantic search, dimensi 1024)
+COHERE_API_KEY=cohere_xxxxxxxxxxxxxxxxxxxxxxxx
 ```
+
+**Frontend (opsional):** tidak wajib punya `.env` — default sudah `VITE_PORT=5180` dan proxy `/api` → `http://localhost:5181`. Salin `frontend/.env.example` ke `frontend/.env` hanya bila ingin mengubahnya.
+
+**Docker Compose — dua mode (disarankan):**
+
+| Mode | Perintah | Keterangan |
+|---|---|---|
+| **Development** (default) | `docker compose up -d --build` | Hot reload: backend `air`, frontend `vite dev` + bind mount kode |
+| **Production / Build** | `docker compose -f docker-compose.yaml up -d --build` | Backend: binary statis (alpine). Frontend: bundle `@sveltejs/adapter-node` (`node build`) |
+
+> Mode development dimuat otomatis lewat `docker-compose.override.yaml`. Untuk production murni, jalankan tanpa override dengan `-f docker-compose.yaml`.
+> Interpolasi port & kredensial DB bisa diatur lewat `.env` di root (opsional, contoh: `.env.example`). Rahasia backend tetap di `backend/.env`.
+> Di mode production tidak ada vite proxy, jadi `/api/*` diteruskan ke backend Go via `src/hooks.server.ts`.
 
 **Instal dependensi Go:**
 ```bash
@@ -72,14 +94,20 @@ go mod tidy
 ```
 
 **Inisialisasi Database (Hanya dilakukan 1x di awal):**
-Ini akan secara otomatis membuat tabel, mengaktifkan `postgis`, dan membuat kolom `vector(384)`.
+Ini akan secara otomatis membuat tabel, mengaktifkan `postgis`, dan membuat kolom `vector(1024)`.
 ```bash
 go run scripts/migrate.go
 ```
 
-**Jalankan Peladen (Server) Backend:**
+**Jalankan Backend — mode Development (hot-reload otomatis dengan air):**
 ```bash
-go run cmd/server/main.go
+air
+```
+*(Pastikan `air` terinstal: `go install github.com/air-verse/air@latest`).*
+
+**Jalankan Backend — mode Production (binary):**
+```bash
+go build -o main ./cmd/server/main.go && ./main
 ```
 *(Backend akan berjalan di `http://localhost:5181`. Zero-Admin Cron Job akan otomatis menarik data dari NASA setiap 1 jam).*
 
@@ -96,11 +124,17 @@ cd ../frontend
 npm install
 ```
 
-**Jalankan Server Frontend:**
+**Jalankan Frontend — mode Development (vite dev server):**
 ```bash
 npm run dev
 ```
 *(Frontend akan berjalan di `http://localhost:5180`. Tekan tombol `o` di terminal, atau klik tautan tersebut untuk membukanya di browser).*
+
+**Jalankan Frontend — mode Production (bundle adapter-node):**
+```bash
+npm run build && npm run preview
+```
+*(Preview menjalankan hasil build; `/api/*` diteruskan ke backend Go via `src/hooks.server.ts` — backend lokal harus jalan di `http://localhost:5181`. Nilai target bisa diganti lewat env `BACKEND_URL`).*
 
 ---
 
