@@ -1,0 +1,254 @@
+[
+  {
+    "nama_objek": "Balai Desa Jarak (Kantor Desa Jarak)",
+    "kategori": "Balai Desa / Gedung Serbaguna",
+    "deskripsi": "Kantor pemerintahan Desa Jarak, bangunan permanen dengan halaman luas. Titik kumpul utama dan pusat koordinasi evakuasi desa.",
+    "alamat_dusun": "Dusun Jarak Lor, Desa Jarak",
+    "kapasitas_orang": 300,
+    "lat": -7.8688004,
+    "lon": 112.1426567
+  },
+  {
+    "nama_objek": "SDN Jarak I",
+    "kategori": "Posko Pendidikan",
+    "deskripsi": "Sekolah dasar negeri dengan halaman luas di Jl. Arjuna, dapat difungsikan sebagai posko pendidikan darurat sekaligus tempat penampungan.",
+    "alamat_dusun": "Dusun Jarak Lor, Desa Jarak",
+    "kapasitas_orang": 150,
+    "lat": -7.8598433,
+    "lon": 112.1315064
+  },
+  {
+    "nama_objek": "SD Negeri Jarak II",
+    "kategori": "Posko Pendidikan",
+    "deskripsi": "Sekolah dasar negeri kedua di desa, berlokasi dekat kantor desa, cocok sebagai titik penampungan tambahan.",
+    "alamat_dusun": "Dusun Jarak Lor, Desa Jarak",
+    "kapasitas_orang": 130,
+    "lat": -7.86832,
+    "lon": 112.14282
+  },
+  {
+    "nama_objek": "SDN Jarak 3",
+    "kategori": "Posko Pendidikan",
+    "deskripsi": "Sekolah dasar di dekat Jl. Raya Pare, Dusun Sagi, berpotensi menampung pengungsi dari wilayah timur desa.",
+    "alamat_dusun": "Dusun Sagi, Desa Jarak",
+    "kapasitas_orang": 130,
+    "lat": -7.8824127,
+    "lon": 112.1467549
+  },
+  {
+    "nama_objek": "Lapangan Jarak Lor",
+    "kategori": "Titik Kumpul Lapangan",
+    "deskripsi": "Lapangan desa yang biasa dipakai untuk acara adat dan olahraga, rata dan luas, sangat ideal sebagai titik kumpul awal evakuasi warga.",
+    "alamat_dusun": "Dusun Jarak Lor, Desa Jarak",
+    "kapasitas_orang": 500,
+    "lat": -7.8598516,
+    "lon": 112.1307691
+  },
+  {
+    "nama_objek": "Masjid Al-Huda Sagi",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Masjid dengan fasilitas cukup lengkap dan lingkungan bersih, dapat menampung warga dalam kondisi darurat.",
+    "alamat_dusun": "Dusun Sagi, Desa Jarak",
+    "kapasitas_orang": 200,
+    "lat": -7.8819431,
+    "lon": 112.1473676
+  },
+  {
+    "nama_objek": "MI Miftahul Mubtadiin",
+    "kategori": "Posko Pendidikan",
+    "deskripsi": "Madrasah Ibtidaiyah dengan ruang kelas dan halaman yang cukup untuk menjadi posko pendidikan darurat.",
+    "alamat_dusun": "Dusun Sagi, Desa Jarak",
+    "kapasitas_orang": 150,
+    "lat": -7.8705382,
+    "lon": 112.1403319
+  },
+  {
+    "nama_objek": "MI Asy Syafi'iyah Plosoklaten",
+    "kategori": "Posko Pendidikan",
+    "deskripsi": "Madrasah Ibtidaiyah di Dusun Jarak Kidul, memiliki volume bangunan cukup besar untuk posko penampungan.",
+    "alamat_dusun": "Dusun Jarak Kidul, Desa Jarak",
+    "kapasitas_orang": 180,
+    "lat": -7.866438,
+    "lon": 112.1329166
+  },
+  {
+    "nama_objek": "UPTD Puskesmas Plosoklaten",
+    "kategori": "Posko Kesehatan",
+    "deskripsi": "Puskesmas kecamatan dengan fasilitas lengkap, menjadi rujukan utama pos kesehatan saat bencana erupsi Kelud.",
+    "alamat_dusun": "Dusun Gedangan, Desa Brenggolo (berbatasan)",
+    "kapasitas_orang": 100,
+    "lat": -7.8483114,
+    "lon": 112.1226680
+  },
+  {
+    "nama_objek": "Puskesmas Pembantu Trisulo",
+    "kategori": "Posko Kesehatan",
+    "deskripsi": "Fasilitas kesehatan pembantu di wilayah timur kecamatan, dapat difungsikan sebagai pos medis tambahan.",
+    "alamat_dusun": "Dusun Pulerejo, Wonorejo Trisulo",
+    "kapasitas_orang": 60,
+    "lat": -7.880971,
+    "lon": 112.2117336
+  },
+  {
+    "nama_objek": "Musholla Al-Asy'ari",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Musholla dusun berukuran sedang, kondisi terawat, dapat difungsikan sebagai titik kumpul kecil warga RT setempat.",
+    "alamat_dusun": "Dusun Jarak Kidul, Desa Jarak",
+    "kapasitas_orang": 50,
+    "lat": -7.8629657,
+    "lon": 112.1272541
+  },
+  {
+    "nama_objek": "Musholla Baitul Makmur",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Musholla bersih dan nyaman di tengah pemukiman padat, cocok sebagai titik kumpul evakuasi tahap awal.",
+    "alamat_dusun": "Dusun Jarak Kidul, Desa Jarak",
+    "kapasitas_orang": 45,
+    "lat": -7.8656967,
+    "lon": 112.1307279
+  },
+  {
+    "nama_objek": "Mushola Al-Mubarrok",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Musholla warga di Dusun Jarak Lor, lokasi cukup dekat dengan Balai Desa sehingga strategis sebagai titik kumpul sekunder.",
+    "alamat_dusun": "Dusun Jarak Lor, Desa Jarak",
+    "kapasitas_orang": 50,
+    "lat": -7.8654107,
+    "lon": 112.1358982
+  },
+  {
+    "nama_objek": "Mushola Ar-Rahman",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Musholla di Jl. Wayah Rabi, Dusun Kalasan, buka 24 jam sehingga selalu bisa diakses saat kondisi darurat.",
+    "alamat_dusun": "Dusun Kalasan, Desa Jarak",
+    "kapasitas_orang": 55,
+    "lat": -7.8844681,
+    "lon": 112.1433869
+  },
+  {
+    "nama_objek": "Mushola Darut Tauhid",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Musholla dengan suasana tenang di Dusun Jarak Lor bagian barat, dapat menampung warga sekitar saat evakuasi awal.",
+    "alamat_dusun": "Dusun Jarak Lor, Desa Jarak",
+    "kapasitas_orang": 45,
+    "lat": -7.8606316,
+    "lon": 112.1276497
+  },
+  {
+    "nama_objek": "Musholla Al Amin",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Musholla kecil di tengah Dusun Jarak Lor, mudah dijangkau warga sekitar sebagai titik kumpul cepat.",
+    "alamat_dusun": "Dusun Jarak Lor, Desa Jarak",
+    "kapasitas_orang": 40,
+    "lat": -7.8642599,
+    "lon": 112.1369279
+  },
+  {
+    "nama_objek": "Musholla Sagi Banaran",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Masjid/musholla dusun yang berlokasi sangat dekat dengan Balai Desa Jarak, ideal sebagai titik kumpul pendukung pusat koordinasi.",
+    "alamat_dusun": "Dusun Sagi, Desa Jarak",
+    "kapasitas_orang": 70,
+    "lat": -7.8743257,
+    "lon": 112.1426231
+  },
+  {
+    "nama_objek": "Musholla Al Mubarok Kalasan",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Musholla dusun yang buka 24 jam, terletak di jalur akses selatan desa, cocok sebagai titik transit evakuasi.",
+    "alamat_dusun": "Dusun Kalasan, Desa Jarak",
+    "kapasitas_orang": 50,
+    "lat": -7.8819565,
+    "lon": 112.1426692
+  },
+  {
+    "nama_objek": "Masjid Al-Muhajirin",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Masjid dusun dengan fasilitas cukup lengkap, biasa dipakai untuk kegiatan warga skala menengah.",
+    "alamat_dusun": "Dusun Jarak Kidul, Desa Jarak",
+    "kapasitas_orang": 100,
+    "lat": -7.8645146,
+    "lon": 112.1305102
+  },
+  {
+    "nama_objek": "Masjid Al Falah Mloko",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Masjid dengan halaman luas dekat sungai, sejuk dan nyaman, berpotensi menampung cukup banyak pengungsi.",
+    "alamat_dusun": "Dusun Mloko, Jarak Kidul, Desa Jarak",
+    "kapasitas_orang": 120,
+    "lat": -7.8613456,
+    "lon": 112.1264588
+  },
+  {
+    "nama_objek": "Masjid Al Hikmah",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Masjid dusun di kawasan Jarak Lor bagian selatan, dapat difungsikan sebagai titik kumpul warga RT sekitar.",
+    "alamat_dusun": "Dusun Jarak Lor, Desa Jarak",
+    "kapasitas_orang": 90,
+    "lat": -7.861857,
+    "lon": 112.1317897
+  },
+  {
+    "nama_objek": "Masjid Baitul Huda",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Masjid besar yang lokasinya sangat dekat dengan Balai Desa Jarak, cocok sebagai titik kumpul utama pendukung.",
+    "alamat_dusun": "Dusun Jarak Lor, Desa Jarak",
+    "kapasitas_orang": 150,
+    "lat": -7.8705669,
+    "lon": 112.1401092
+  },
+  {
+    "nama_objek": "Masjid Baiturrohmah",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Masjid dengan halaman parkir luas dan fasilitas air bersih memadai, sangat representatif sebagai titik kumpul evakuasi berskala besar.",
+    "alamat_dusun": "Dusun Sagi, Desa Jarak",
+    "kapasitas_orang": 180,
+    "lat": -7.8677064,
+    "lon": 112.14196
+  },
+  {
+    "nama_objek": "TK Kusuma Mulia",
+    "kategori": "Posko Pendidikan",
+    "deskripsi": "Taman kanak-kanak di Dusun Sagi, dapat difungsikan sebagai posko bantuan bagi anak-anak dan lansia saat evakuasi.",
+    "alamat_dusun": "Dusun Sagi, Desa Jarak",
+    "kapasitas_orang": 60,
+    "lat": -7.8707951,
+    "lon": 112.1403744
+  },
+  {
+    "nama_objek": "TK Dharma Wanita Jarak-2",
+    "kategori": "Posko Pendidikan",
+    "deskripsi": "Taman kanak-kanak di Jl. Arjuna, dapat digunakan sebagai posko darurat untuk kelompok rentan.",
+    "alamat_dusun": "Dusun Jarak Lor, Desa Jarak",
+    "kapasitas_orang": 60,
+    "lat": -7.8624968,
+    "lon": 112.1304767
+  },
+  {
+    "nama_objek": "MTs Sunan Ampel Plosoklaten",
+    "kategori": "Posko Pendidikan",
+    "deskripsi": "Sekolah menengah pertama Islam dengan gedung cukup besar, dapat menampung banyak pengungsi dari wilayah barat desa.",
+    "alamat_dusun": "Dusun Panjer, Jarak Kidul, Desa Jarak",
+    "kapasitas_orang": 220,
+    "lat": -7.8597847,
+    "lon": 112.1235851
+  },
+  {
+    "nama_objek": "RSUD Gambiran Kota Kediri",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Rumah Sakit Umum Daerah kelas B di pusat Kota Kediri. Fasilitas medis paling lengkap di wilayah Kediri Raya, sangat aman dari ancaman lahar karena berada puluhan kilometer di luar zona merah.",
+    "alamat_dusun": "Jl. Kapten Tendean No.16, Kota Kediri",
+    "kapasitas_orang": 1500,
+    "lat": -7.8488,
+    "lon": 112.0298
+  },
+  {
+    "nama_objek": "RSUD Kabupaten Kediri (RSKK Pare)",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Rumah Sakit Umum Daerah milik Pemerintah Kabupaten Kediri di Pare. Pusat rujukan utama bencana alam Kabupaten Kediri, berada di zona yang sangat aman dari jangkauan awan panas dan lahar Kelud.",
+    "alamat_dusun": "Jl. Pahlawan Kusuma Bangsa No.1, Pare",
+    "kapasitas_orang": 1000,
+    "lat": -7.7617,
+    "lon": 112.1813
+  }
+]
