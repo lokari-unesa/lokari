@@ -35,7 +35,10 @@ func main() {
 		log.Fatal("ERROR: COHERE_API_KEY belum diatur di .env")
 	}
 
-	lokariDB := "postgresql://postgres:root@127.0.0.1:5433/lokari_db?sslmode=disable"
+	lokariDB := os.Getenv("DATABASE_URL")
+	if lokariDB == "" {
+		log.Fatal("ERROR: DATABASE_URL is required in .env")
+	}
 	ctx := context.Background()
 
 	pool, err := pgxpool.New(ctx, lokariDB)
@@ -45,7 +48,7 @@ func main() {
 	defer pool.Close()
 
 	// Read Posko.txt
-	filePath := "../frontend/static/assets/Posko.txt"
+	filePath := "scripts/Posko.txt"
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Fatalf("Gagal membaca file Posko.txt: %v", err)
@@ -69,7 +72,7 @@ func main() {
 
 	for _, node := range nodes {
 		// Konteks untuk Search
-		deskripsiFull := fmt.Sprintf("%s Berada di %s. Fasilitas ini masuk kategori %s. Mampu menampung sekitar %d pengungsi.", 
+		deskripsiFull := fmt.Sprintf("%s Berada di %s. Fasilitas ini masuk kategori %s. Mampu menampung sekitar %d pengungsi.",
 			node.Deskripsi, node.AlamatDusun, node.Kategori, node.KapasitasOrang)
 
 		// Cegah duplikasi

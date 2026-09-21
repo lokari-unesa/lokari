@@ -7,12 +7,20 @@ import (
 	"context"
 	"log"
 
+	"os"
+	"strings"
+
+	"github.com/joho/godotenv"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
-	// First connect to default postgres db to create lokari_db
-	defaultDB := "postgresql://postgres:root@127.0.0.1:5433/postgres?sslmode=disable"
+	_ = godotenv.Load(".env", "../.env")
+	lokariDB := os.Getenv("DATABASE_URL")
+	if lokariDB == "" {
+		log.Fatal("ERROR: DATABASE_URL is required in .env")
+	}
+	defaultDB := strings.Replace(lokariDB, "lokari_db", "postgres", 1)
 	ctx := context.Background()
 	
 	pool, err := pgxpool.New(ctx, defaultDB)
@@ -30,7 +38,6 @@ func main() {
 	pool.Close()
 
 	// Now connect to lokari_db
-	lokariDB := "postgresql://postgres:root@127.0.0.1:5433/lokari_db?sslmode=disable"
 	pool, err = pgxpool.New(ctx, lokariDB)
 	if err != nil {
 		log.Fatalf("Unable to connect to lokari_db: %v\n", err)
