@@ -1,0 +1,22 @@
+# Env — jangan pernah commit nilai asli
+.env
+.env.*
+!.env.example
+
+# Node / SvelteKit
+node_modules/
+/build
+/.svelte-kit
+.output
+.vercel
+.netlify
+
+# Go binary hasil build lokal
+backend/main
+
+# Go hot-reload (air) artifact
+backend/tmp/
+
+# OS
+.DS_Store
+Thumbs.db
