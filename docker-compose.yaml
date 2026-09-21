@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  frontend:
+    container_name: lokari-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile # Pastikan Anda membuat file ini nanti
+    ports:
+      - "5180:5180" # Port SvelteKit LOKARI
+    depends_on:
+      - backend
+    environment:
+      - VITE_PORT=5180
+      - BACKEND_URL=http://backend:5181
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - lokari-network
+
+  backend:
+    container_name: lokari-backend
+    restart: on-failure
+    build: 
+      context: ./backend
+      dockerfile: docker/Dockerfile-backend
+    ports:
+      - "5181:5181" # Port Backend Golang LOKARI
+    depends_on:
+      - db
+    env_file:
+      - ./backend/.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:root@db:5432/lokari_db?sslmode=disable
+    networks:
+      - lokari-network
+
+  db:
+    container_name: lokari-db
+    build: 
+      context: ./backend/docker
+      dockerfile: Dockerfile-db # Pastikan file ini berisi instalasi pgvector/PostGIS
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=lokari_db
+    ports:
+      - "5433:5432" # Map ke port 5433 agar sesuai dengan backend/.env
+    volumes:
+      - lokari_pgdata:/var/lib/postgresql/data
+    networks:
+      - lokari-network
+
+volumes:
+  lokari_pgdata:
+    driver: local
+
+networks:
+  lokari-network:
+    driver: bridge

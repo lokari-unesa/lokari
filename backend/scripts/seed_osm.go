@@ -46,7 +46,10 @@ func main() {
 		log.Fatal("ERROR: COHERE_API_KEY belum diatur di .env")
 	}
 
-	lokariDB := "postgresql://postgres:root@127.0.0.1:5433/lokari_db?sslmode=disable"
+	lokariDB := os.Getenv("DATABASE_URL")
+	if lokariDB == "" {
+		log.Fatal("ERROR: DATABASE_URL is required in .env")
+	}
 	ctx := context.Background()
 
 	pool, err := pgxpool.New(ctx, lokariDB)
