@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 
 export async function GET({ url, fetch }) {
   const start = url.searchParams.get('start');
@@ -28,6 +29,8 @@ export async function GET({ url, fetch }) {
   ];
 
   // Strategi 1: OpenRouteService dengan Fitur Dynamic Hazard Avoidance (Sesuai Proposal)
+  const orsApiKey = env.ORS_API_KEY ?? '';
+
   try {
     const orsUrl = `https://api.openrouteservice.org/v2/directions/driving-car/geojson`;
     const body = {
@@ -43,7 +46,7 @@ export async function GET({ url, fetch }) {
     const res = await fetch(orsUrl, {
       method: 'POST',
       headers: {
-        'Authorization': '5b3ce3597851110001cf6248b3b4e6e1e1a14a0e8c68e8d25f2e58e3',
+        'Authorization': orsApiKey,
         'Content-Type': 'application/json',
         'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8'
       },

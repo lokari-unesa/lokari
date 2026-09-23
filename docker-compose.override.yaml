@@ -12,8 +12,20 @@ services:
       - ./backend:/app
 
   frontend:
+    container_name: lokari-frontend
     build:
-      target: dev
+      context: ./frontend
+      dockerfile: Dockerfile
+      # target default = stage final (prod): server adapter-node
+    ports:
+      - "${FRONTEND_PORT:-5180}:${FRONTEND_PORT:-5180}"
+    depends_on:
+      - backend
+    environment:
+      VITE_PORT: ${FRONTEND_PORT:-5180}
+      BACKEND_URL: http://backend:${BACKEND_PORT:-5181}
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    networks:
+      - lokari-network
