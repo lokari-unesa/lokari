@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { cn } from "$lib/utils";
+  import desaJarakGeoJSON from "$lib/data/desa_jarak.json";
 
   let {
     showHazard = true,
@@ -17,7 +18,8 @@
     originLat = -7.952,
     originLng = 112.235,
     potensiData = [],
-    onMarkerClick
+    onMarkerClick,
+    routeCoords = []
   } = $props<{
     showHazard?: boolean;
     showRoute?: boolean;
@@ -34,6 +36,7 @@
     originLng?: number;
     potensiData?: any[];
     onMarkerClick?: (potensi: any) => void;
+    routeCoords?: any[];
   }>();
 
   let mapElement: HTMLElement;
@@ -46,6 +49,7 @@
   let dynamicMarkers: any[] = []; // Untuk penanda dinamis dari potensiData
   let hazardGroup: any;
   let laharLayer: any;
+  let desaJarakLayer: any;
 
   // Koordinat Gunung Kelud
   const keludLat = -7.9333;
@@ -78,45 +82,6 @@
     // Tandai peta siap — ini akan memicu $effect pertama kali
     mapReady = true;
   });
-
-  // Fungsi utama: Menarik rute jalan nyata dari OSRM via proxy server kita
-  async function fetchRealRoute(lat1: number, lng1: number, lat2: number, lng2: number) {
-    // Hitung jarak lurus (Haversine) terlebih dahulu
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) ** 2 +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLng / 2) ** 2;
-    const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    // Jarak < 50 meter: langsung gambar garis lurus (titik praktis sama)
-    if (distKm < 0.05) {
-      return [[lat1, lng1], [lat2, lng2]];
-    }
-
-    // Jarak >= 2km: gunakan OSRM routing
-    try {
-      const url = `/api/route?start=${lng1},${lat1}&end=${lng2},${lat2}`;
-      const res = await fetch(url);
-      
-      if (res.ok) {
-        const data = await res.json();
-        if (data.routes && data.routes.length > 0) {
-          const coords = data.routes[0].geometry.coordinates;
-          return [
-            [lat1, lng1],
-            ...coords.map((c: any[]) => [c[1], c[0]]),
-            [lat2, lng2]
-          ];
-        }
-      }
-    } catch (e) {
-      console.error("Gagal menarik rute:", e);
-    }
-    // Fallback garis lurus
-    return [[lat1, lng1], [lat2, lng2]];
-  }
 
   // Custom DivIcon factories (dipanggil setiap kali karena Leaflet butuh instance baru)
   function createOriginIcon() {
@@ -208,6 +173,7 @@
     const wantHazard = showHazard;
     const wantLahar = showLahar;
     const pd = potensiData;
+    const rCoords = routeCoords;
 
     // --- Hazard Zone (KRB I, II, III - Lebih Presisi) ---
     if (wantHazard) {
@@ -301,6 +267,21 @@
       }
     }
 
+    // --- Batas Desa Jarak ---
+    if (!desaJarakLayer) {
+      desaJarakLayer = L.geoJSON(desaJarakGeoJSON, {
+        style: {
+          color: '#E11D48', // Rose-600 (mirip merah di gambar)
+          weight: 2,
+          fillColor: '#E11D48',
+          fillOpacity: 0.15, // Cukup transparan agar satelit terlihat
+          dashArray: '4, 6'
+        }
+      }).bindTooltip("Wilayah Desa Jarak", { permanent: false, sticky: true }).addTo(map);
+    } else if (!map.hasLayer(desaJarakLayer)) {
+      desaJarakLayer.addTo(map);
+    }
+
     // Bersihkan marker dinamis lama
     dynamicMarkers.forEach(m => map.removeLayer(m));
     dynamicMarkers = [];
@@ -380,11 +361,11 @@
 
     // --- Route Line ---
     if (wantRoute && dLat !== 0 && dLng !== 0) {
-      fetchRealRoute(oLat, oLng, dLat, dLng).then(latLngs => {
-        if (routeLayer) {
-          map.removeLayer(routeLayer);
-        }
-        routeLayer = L.polyline(latLngs, {
+      if (routeLayer) {
+        map.removeLayer(routeLayer);
+      }
+      if (rCoords && rCoords.length > 0) {
+        routeLayer = L.polyline(rCoords, {
           color: '#16A34A',
           weight: 6,
           dashArray: '1, 15',
@@ -393,7 +374,7 @@
         }).addTo(map);
         
         map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
-      });
+      }
     }
   });
 

@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/joho/godotenv"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 	}
 	defaultDB := strings.Replace(lokariDB, "lokari_db", "postgres", 1)
 	ctx := context.Background()
-	
+
 	pool, err := pgxpool.New(ctx, defaultDB)
 	if err != nil {
 		log.Fatalf("Unable to connect to default database: %v\n", err)
@@ -57,16 +57,10 @@ func main() {
 		}
 	}
 
-	log.Println("Creating tables (potensi_bencana, kategori_layer, pengguna, log_update)...")
+	log.Println("Creating tables (potensi_bencana, kategori_layer, log_update)...")
 
 	// Create tables
 	schema := `
-CREATE TABLE IF NOT EXISTS pengguna (
-    id_pengguna UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    username VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
 CREATE TABLE IF NOT EXISTS kategori_layer (
     id_kategori SERIAL PRIMARY KEY,
@@ -74,7 +68,6 @@ CREATE TABLE IF NOT EXISTS kategori_layer (
     ikon_marker VARCHAR(255)
 );
 
-DROP TABLE IF EXISTS potensi_bencana CASCADE;
 
 CREATE TABLE IF NOT EXISTS potensi_bencana (
     id_potensi UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

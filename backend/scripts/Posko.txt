@@ -250,5 +250,275 @@
     "kapasitas_orang": 1000,
     "lat": -7.7617,
     "lon": 112.1813
+  },
+  {
+    "nama_objek": "IHC Rumah Sakit Toeloengredjo (HVA) Pare",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Rumah sakit umum swasta besar di pusat Kecamatan Pare, buka 24 jam dengan IGD lengkap, sangat layak sebagai rujukan medis utama pengungsi dari zona rawan Kelud.",
+    "alamat_dusun": "Jl. A.Yani Timur No.25, Pare, Kec. Pare, Kabupaten Kediri",
+    "kapasitas_orang": 400,
+    "lat": -7.7632863,
+    "lon": 112.1978039
+  },
+  {
+    "nama_objek": "Rumah Sakit Amelia",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Rumah sakit umum di Kecamatan Pare, buka 24 jam, dapat difungsikan sebagai pos kesehatan tambahan wilayah penyangga timur.",
+    "alamat_dusun": "Jl. Pahlawan Kusuma Bangsa No.25A, Tulungrejo, Kec. Pare, Kabupaten Kediri",
+    "kapasitas_orang": 200,
+    "lat": -7.7623326,
+    "lon": 112.1818997
+  },
+  {
+    "nama_objek": "Mother and Child Hospital Kasih Bunda",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Rumah sakit ibu dan anak di Pare, penting sebagai pos kesehatan khusus untuk kelompok rentan (ibu hamil, bayi) saat evakuasi.",
+    "alamat_dusun": "Jl. Jaya Wijaya No.1, Perdana, Pare, Kec. Pare, Kabupaten Kediri",
+    "kapasitas_orang": 150,
+    "lat": -7.7697177,
+    "lon": 112.1907309
+  },
+  {
+    "nama_objek": "Simpang Lima Gumul Hospital",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Rumah sakit umum modern dekat landmark Simpang Lima Gumul, lokasi strategis di jalur utama Kabupaten Kediri, aman dari ancaman Kelud.",
+    "alamat_dusun": "Tugurejo, Kec. Ngasem, Kabupaten Kediri",
+    "kapasitas_orang": 350,
+    "lat": -7.8215692,
+    "lon": 112.0577655
+  },
+  {
+    "nama_objek": "UPTD Puskesmas Gurah",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Puskesmas kecamatan dengan gedung baru dan layanan lengkap, menjadi pos kesehatan lini pertama di wilayah penyangga barat.",
+    "alamat_dusun": "Jl. Seruji No.10, Gurah II, Kec. Gurah, Kabupaten Kediri",
+    "kapasitas_orang": 120,
+    "lat": -7.8120343,
+    "lon": 112.0883657
+  },
+  {
+    "nama_objek": "Puskesmas Ngasem",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Puskesmas kecamatan yang melayani wilayah Ngasem, cocok sebagai pos kesehatan pendukung dekat kawasan Simpang Lima Gumul.",
+    "alamat_dusun": "Jl. Pamenang No.516, Ngasem, Kec. Ngasem, Kabupaten Kediri",
+    "kapasitas_orang": 100,
+    "lat": -7.7982986,
+    "lon": 112.0469883
+  },
+  {
+    "nama_objek": "Puskesmas Wates (Buka 24 Jam)",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Puskesmas rawat inap yang beroperasi 24 jam, jauh dari radius bahaya Kelud, ideal sebagai pos kesehatan siaga bencana wilayah selatan.",
+    "alamat_dusun": "Jl. Wates Pare No.74, Jayaraya, Kec. Wates, Kabupaten Kediri",
+    "kapasitas_orang": 130,
+    "lat": -7.9171121,
+    "lon": 112.1285221
+  },
+  {
+    "nama_objek": "Rumah Sakit Baptis Kediri",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Rumah sakit umum besar dan lengkap di Kecamatan Pesantren, salah satu rujukan medis utama Kota Kediri, sangat aman dari zona bahaya Kelud.",
+    "alamat_dusun": "Jl. Brigjend Pol. IBH Pranoto No.1, Bangsal, Kec. Pesantren, Kota Kediri",
+    "kapasitas_orang": 500,
+    "lat": -7.827098,
+    "lon": 112.0318372
+  },
+  {
+    "nama_objek": "Puskesmas Pesantren I",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Puskesmas kecamatan dengan fasilitas bersih dan layanan cepat, dapat menjadi pos kesehatan lini pertama di Kota Kediri wilayah timur.",
+    "alamat_dusun": "Jl. Brigjend Pol. Imam Bachri No.94, Bangsal, Kec. Pesantren, Kota Kediri",
+    "kapasitas_orang": 100,
+    "lat": -7.8320305,
+    "lon": 112.0426505
+  },
+  {
+    "nama_objek": "Rumah Sehat Avisenna",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Klinik rumah sehat dengan layanan ambulans dan rawat inap, berlokasi di Kecamatan Pesantren, dapat menjadi pos kesehatan tambahan.",
+    "alamat_dusun": "Tempurejo, Kec. Pesantren, Kabupaten Kediri",
+    "kapasitas_orang": 60,
+    "lat": -7.845409,
+    "lon": 112.0738129
+  },
+  {
+    "nama_objek": "RSUD Kilisuci Kota Kediri",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Rumah sakit umum daerah milik Pemkot Kediri dengan fasilitas lengkap dan modern, sangat aman karena berada jauh di wilayah barat Kota Kediri.",
+    "alamat_dusun": "Jl. KH Wachid Hasyim No.64, Bandar Lor, Kec. Mojoroto, Kota Kediri",
+    "kapasitas_orang": 400,
+    "lat": -7.817622,
+    "lon": 112.0055244
+  },
+  {
+    "nama_objek": "Rumah Sakit Bhayangkara Kediri",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Rumah sakit umum milik Polri dengan IGD 24 jam di pusat Kota Kediri, dapat menjadi rujukan medis skala besar saat tanggap darurat.",
+    "alamat_dusun": "Jl. Kombes Pol Duryat No.17, Dandangan, Kec. Kota, Kota Kediri",
+    "kapasitas_orang": 450,
+    "lat": -7.8133813,
+    "lon": 112.0181455
+  },
+  {
+    "nama_objek": "UPTD Puskesmas Papar",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Puskesmas kecamatan di jalur utama Papar, berperan sebagai pos kesehatan lini pertama di wilayah penyangga barat daya.",
+    "alamat_dusun": "Jl. Raya Papar No.57, Papar Selatan, Kec. Papar, Kabupaten Kediri",
+    "kapasitas_orang": 100,
+    "lat": -7.7004757,
+    "lon": 112.0772423
+  },
+  {
+    "nama_objek": "RS Muhammadiyah Ahmad Dahlan",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Rumah sakit umum besar dan modern di Mojoroto dengan rating pelayanan tinggi, layak menjadi rujukan medis skala besar bagi pengungsi.",
+    "alamat_dusun": "Jl. Gatot Subroto No.84, Mrican, Kec. Mojoroto, Kabupaten Kediri",
+    "kapasitas_orang": 600,
+    "lat": -7.7889692,
+    "lon": 112.000518
+  },
+  {
+    "nama_objek": "RSU Ratih Kediri",
+    "kategori": "Fasilitas Kesehatan",
+    "deskripsi": "Rumah sakit umum dengan fokus layanan ibu dan anak di Mojoroto, dapat difungsikan sebagai pos kesehatan tambahan kelompok rentan.",
+    "alamat_dusun": "Jl. Penanggungan No.32, Bandar Kidul, Kec. Mojoroto, Kota Kediri",
+    "kapasitas_orang": 250,
+    "lat": -7.8205132,
+    "lon": 111.9984573
+  },
+  {
+    "nama_objek": "Masjid Agung An-Nur Pare",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Masjid agung terbesar di Kecamatan Pare dengan halaman dan taman luas, sangat representatif sebagai titik kumpul evakuasi berskala besar.",
+    "alamat_dusun": "Jl. Matahari No.2, Tulungrejo, Kec. Pare, Kabupaten Kediri",
+    "kapasitas_orang": 1500,
+    "lat": -7.7642158,
+    "lon": 112.1828016
+  },
+  {
+    "nama_objek": "SMA Negeri 1 Pare",
+    "kategori": "Fasilitas Pendidikan",
+    "deskripsi": "Sekolah menengah negeri dengan gedung dan lapangan luas di pusat Pare, dapat difungsikan sebagai posko pengungsian dan pendidikan darurat.",
+    "alamat_dusun": "Jl. Pahlawan Kusuma Bangsa No.41, Tulungrejo, Kec. Pare, Kabupaten Kediri",
+    "kapasitas_orang": 600,
+    "lat": -7.7635893,
+    "lon": 112.183376
+  },
+  {
+    "nama_objek": "GOR Jayabaya Mojoroto",
+    "kategori": "Posko & Titik Kumpul",
+    "deskripsi": "Kompleks gedung olahraga terbesar di Kota/Kabupaten Kediri dengan area terbuka luas, sangat ideal sebagai posko pengungsian massal.",
+    "alamat_dusun": "Jl. GOR Jayabaya, Banjarmlati, Kec. Mojoroto, Kabupaten Kediri",
+    "kapasitas_orang": 3000,
+    "lat": -7.8340711,
+    "lon": 111.9990783
+  },
+  {
+    "nama_objek": "Masjid Agung Kota Kediri",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Masjid agung ikonik Kota Kediri dengan area parkir dan halaman sangat luas, layak menjadi titik kumpul utama pengungsian di pusat kota.",
+    "alamat_dusun": "Jl. Panglima Sudirman No.160, Kp. Dalem, Kec. Kota, Kota Kediri",
+    "kapasitas_orang": 2000,
+    "lat": -7.82683,
+    "lon": 112.0100684
+  },
+  {
+    "nama_objek": "Stadion Brawijaya Kediri",
+    "kategori": "Posko & Titik Kumpul",
+    "deskripsi": "Stadion sepak bola utama Kota Kediri dengan tribun dan lapangan luas, dapat menampung pengungsi dalam jumlah sangat besar.",
+    "alamat_dusun": "Jl. Ahmad Yani, Banjaran, Kec. Kota, Kota Kediri",
+    "kapasitas_orang": 5000,
+    "lat": -7.8170712,
+    "lon": 112.0287768
+  },
+  {
+    "nama_objek": "Balai Desa Gurah",
+    "kategori": "Gedung Pemerintahan",
+    "deskripsi": "Kantor pemerintahan Desa Gurah dengan bangunan baru dan halaman memadai, dapat menjadi titik koordinasi posko wilayah Gurah.",
+    "alamat_dusun": "Jl. Seruji No.47, Gurah II, Kec. Gurah, Kabupaten Kediri",
+    "kapasitas_orang": 250,
+    "lat": -7.8122923,
+    "lon": 112.0884191
+  },
+  {
+    "nama_objek": "Balai Desa Blimbing",
+    "kategori": "Gedung Pemerintahan",
+    "deskripsi": "Kantor Desa Blimbing dengan fasilitas cukup, dapat difungsikan sebagai posko pendukung di wilayah timur Kecamatan Gurah.",
+    "alamat_dusun": "Blimbing Barat, Kec. Gurah, Kabupaten Kediri",
+    "kapasitas_orang": 200,
+    "lat": -7.864151,
+    "lon": 112.1067134
+  },
+  {
+    "nama_objek": "Balai Desa Ngasem (Kec. Gurah)",
+    "kategori": "Gedung Pemerintahan",
+    "deskripsi": "Kantor pemerintahan desa yang berlokasi di Kecamatan Gurah, dapat menjadi titik koordinasi evakuasi tambahan di wilayah penyangga barat.",
+    "alamat_dusun": "Desa Ngasem, Kec. Gurah, Kabupaten Kediri",
+    "kapasitas_orang": 200,
+    "lat": -7.8528091,
+    "lon": 112.1051104
+  },
+  {
+    "nama_objek": "Balai Desa Papar",
+    "kategori": "Gedung Pemerintahan",
+    "deskripsi": "Kantor kepala desa yang berlokasi strategis di perempatan Papar, biasa digunakan sebagai pusat kegiatan sosial dan kesehatan warga.",
+    "alamat_dusun": "Papar Utara, Kec. Papar, Kabupaten Kediri",
+    "kapasitas_orang": 300,
+    "lat": -7.6943226,
+    "lon": 112.0782488
+  },
+  {
+    "nama_objek": "Lapangan Desa Ngampel",
+    "kategori": "Posko & Titik Kumpul",
+    "deskripsi": "Lapangan desa yang luas dan rata di Kecamatan Papar, sering dipakai untuk acara warga, ideal sebagai titik kumpul awal evakuasi.",
+    "alamat_dusun": "Ngampel, Kec. Papar, Kabupaten Kediri",
+    "kapasitas_orang": 800,
+    "lat": -7.7084304,
+    "lon": 112.1078939
+  },
+  {
+    "nama_objek": "Lapangan Simpang Lima Gumul",
+    "kategori": "Posko & Titik Kumpul",
+    "deskripsi": "Lapangan terbuka luas di kawasan landmark ikonik Kabupaten Kediri, mudah diakses dari berbagai arah dan cocok sebagai titik kumpul besar.",
+    "alamat_dusun": "Dadapan, Sumberejo, Kec. Ngasem, Kabupaten Kediri",
+    "kapasitas_orang": 2000,
+    "lat": -7.8124754,
+    "lon": 112.0621455
+  },
+  {
+    "nama_objek": "SMPN 1 Ngasem",
+    "kategori": "Fasilitas Pendidikan",
+    "deskripsi": "Sekolah menengah pertama negeri dengan ruang kelas dan halaman cukup luas, dapat difungsikan sebagai posko pengungsian wilayah Ngasem.",
+    "alamat_dusun": "Besok, Sukorejo, Kec. Ngasem, Kabupaten Kediri",
+    "kapasitas_orang": 400,
+    "lat": -7.7934343,
+    "lon": 112.052863
+  },
+  {
+    "nama_objek": "Kantor Kecamatan Pesantren",
+    "kategori": "Gedung Pemerintahan",
+    "deskripsi": "Kantor kecamatan dengan gedung serbaguna dan lahan cukup luas, dapat menjadi pusat koordinasi posko pengungsian wilayah timur Kota Kediri.",
+    "alamat_dusun": "Jl. Brigjen Pol. Imam Bachri HP No.98, Bangsal, Kec. Pesantren, Kota Kediri",
+    "kapasitas_orang": 300,
+    "lat": -7.8317549,
+    "lon": 112.0430727
+  },
+  {
+    "nama_objek": "Kantor Kepala Desa Wates",
+    "kategori": "Gedung Pemerintahan",
+    "deskripsi": "Kantor desa yang berdampingan dengan Koramil dan lapangan desa, cocok sebagai titik koordinasi evakuasi wilayah Kecamatan Wates.",
+    "alamat_dusun": "Jl. Raya Kediri No.7, Desa Wates, Kec. Wates, Kabupaten Kediri",
+    "kapasitas_orang": 250,
+    "lat": -7.9142444,
+    "lon": 112.1227443
+  },
+  {
+    "nama_objek": "Masjid Jami' Al-Huda Jajar",
+    "kategori": "Tempat Ibadah",
+    "deskripsi": "Masjid besar dengan lokasi strategis dan parkir luas di Kecamatan Wates, dapat menampung banyak pengungsi saat kondisi darurat.",
+    "alamat_dusun": "Jajar, Kec. Wates, Kabupaten Kediri",
+    "kapasitas_orang": 350,
+    "lat": -7.9056988,
+    "lon": 112.1242517
   }
 ]

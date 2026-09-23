@@ -10,10 +10,15 @@
 
   const categoryToSlug: Record<string, string> = {
     "Gunung Api": "volcano",
+    "volcano": "volcano",
     "Lahar": "lahar",
+    "lahar": "lahar",
     "Evakuasi": "evac",
+    "evac": "evac",
     "Cuaca": "weather",
-    "Peringatan": "warning"
+    "weather": "weather",
+    "Peringatan": "warning",
+    "warning": "warning"
   };
 
   // Mapping kategori ke Ikon dan Warna
