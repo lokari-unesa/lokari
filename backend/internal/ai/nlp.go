@@ -7,9 +7,15 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/sashabaranov/go-openai"
 )
+
+// aiHTTPTimeout dipakai untuk semua panggilan HTTP keluar agar handler
+// tidak menggantung tanpa batas.
+const aiHTTPTimeout = 30 * time.Second
 
 // SummarizeAlert uses any OpenAI-compatible API (OpenRouter, Groq, DeepSeek)
 func SummarizeAlert(ctx context.Context, rawData string) (string, error) {
@@ -23,6 +29,7 @@ func SummarizeAlert(ctx context.Context, rawData string) (string, error) {
 
 	config := openai.DefaultConfig(apiKey)
 	config.BaseURL = baseURL
+	config.HTTPClient = &http.Client{Timeout: aiHTTPTimeout}
 	client := openai.NewClientWithConfig(config)
 
 	prompt := fmt.Sprintf(`Anda adalah asisten mitigasi bencana untuk warga Desa Jarak, Kediri. 
@@ -59,6 +66,11 @@ Jangan gunakan bahasa teknis berlebihan.`, rawData)
 		return "", fmt.Errorf("AI Provider error: %v", err)
 	}
 
+	// Cegah panic index out of range bila model mengembalikan choices kosong
+	if len(resp.Choices) == 0 {
+		return "", fmt.Errorf("AI mengembalikan response tanpa choices")
+	}
+
 	return resp.Choices[0].Message.Content, nil
 }
 
@@ -69,7 +81,8 @@ type NewsItem struct {
 	Summary  string `json:"ringkasan"`
 }
 
-// GenerateNewsSummary uses Cohere API to summarize JSON data into a NewsItem
+// GenerateNewsSummary uses any OpenAI-compatible API to summarize JSON data
+// into a NewsItem, dengan strip code fence & 1x retry bila JSON tidak valid.
 func GenerateNewsSummary(ctx context.Context, rawData string, source string) (*NewsItem, error) {
 	apiKey := os.Getenv("AI_API_KEY")
 	baseURL := os.Getenv("AI_BASE_URL")
@@ -81,17 +94,22 @@ func GenerateNewsSummary(ctx context.Context, rawData string, source string) (*N
 
 	config := openai.DefaultConfig(apiKey)
 	config.BaseURL = baseURL
+	config.HTTPClient = &http.Client{Timeout: aiHTTPTimeout}
 	client := openai.NewClientWithConfig(config)
 
-	prompt := fmt.Sprintf(`Anda adalah asisten cerdas pemantau kebencanaan untuk Desa Jarak, Kediri.
+	prompt := fmt.Sprintf(`Anda adalah sistem analisis data geografis.
 Berikut adalah data mentah dari %s:
 %s
 
 Tugas Anda:
-Pahami data tersebut dan buatlah sebuah ringkasan berita singkat berbahasa Indonesia yang mudah dipahami warga awam. 
-Fokus pada kewaspadaan, mitigasi, atau peringatan dini yang relevan (jika ada ancaman letusan/gempa, jelaskan bahayanya misal "jauhi bantaran sungai dari lahar dingin", atau "pantau terus info resmi").
-JANGAN PANIK jika tidak ada bahaya.
-Kategorikan ke salah satu dari: volcano, lahar, evac, weather, warning.
+Buatlah ringkasan berita singkat berbahasa Indonesia dari data tersebut. Sampaikan secara netral dan informatif.
+
+Pilih SALAH SATU kategori yang paling tepat berdasarkan aturan berikut:
+- "warning" : Gempa bumi tektonik, tsunami, atau peringatan bahaya/darurat mendadak.
+- "weather" : Kondisi cuaca (hujan, kemarau, angin kencang, badai, suhu, iklim).
+- "volcano" : Aktivitas vulkanik, erupsi gunung, awan panas, atau gempa vulkanik.
+- "lahar"   : Aliran lahar hujan, peringatan sungai, banjir material vulkanik.
+- "evac"    : Informasi evakuasi, pengungsian, posko, titik kumpul, atau bantuan darurat.
 
 Output HARUS berformat JSON persis seperti ini (tanpa markdown blok):
 {
@@ -113,16 +131,55 @@ Output HARUS berformat JSON persis seperti ini (tanpa markdown blok):
 		},
 	}
 
-	resp, err := client.CreateChatCompletion(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("AI Provider error: %v", err)
+	var lastErr error
+	for attempt := 1; attempt <= 2; attempt++ {
+		resp, err := client.CreateChatCompletion(ctx, req)
+		if err != nil {
+			lastErr = fmt.Errorf("AI Provider error: %v", err)
+			continue
+		}
+		if len(resp.Choices) == 0 {
+			lastErr = fmt.Errorf("AI mengembalikan response tanpa choices")
+			continue
+		}
+		content := resp.Choices[0].Message.Content
+		news, parseErr := parseNewsItem(content)
+		if parseErr != nil {
+			lastErr = fmt.Errorf("Gagal parsing JSON dari AI (percobaan %d): %v\nResponse: %s", attempt, parseErr, content)
+			continue
+		}
+		return news, nil
+	}
+	return nil, lastErr
+}
+
+// parseNewsItem mengekstrak & mem-parsing JSON dari respons AI, toleran terhadap
+// ```json code fence dan teks di sekeliling objek JSON.
+func parseNewsItem(content string) (*NewsItem, error) {
+	trimmed := strings.TrimSpace(content)
+
+	// Hapus ```json ... ``` code fence bila ada
+	if strings.HasPrefix(trimmed, "```") {
+		trimmed = strings.TrimPrefix(trimmed, "```json")
+		trimmed = strings.TrimPrefix(trimmed, "```JSON")
+		trimmed = strings.TrimPrefix(trimmed, "```")
+		if idx := strings.LastIndex(trimmed, "```"); idx != -1 {
+			trimmed = trimmed[:idx]
+		}
+		trimmed = strings.TrimSpace(trimmed)
+	}
+
+	// Coba bersihkan teks tambahan (ekstrak hanya dari { sampai })
+	startIdx := strings.Index(trimmed, "{")
+	endIdx := strings.LastIndex(trimmed, "}")
+	if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
+		trimmed = trimmed[startIdx : endIdx+1]
 	}
 
 	var news NewsItem
-	if err := json.Unmarshal([]byte(resp.Choices[0].Message.Content), &news); err != nil {
-		return nil, fmt.Errorf("Gagal parsing JSON dari AI: %v\nResponse: %s", err, resp.Choices[0].Message.Content)
+	if err := json.Unmarshal([]byte(trimmed), &news); err != nil {
+		return nil, err
 	}
-
 	return &news, nil
 }
 
@@ -147,7 +204,7 @@ func GenerateEmbedding(text string) ([]float32, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: aiHTTPTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("Cohere Request error: %v", err)
@@ -166,14 +223,14 @@ func GenerateEmbedding(text string) ([]float32, error) {
 			Float [][]float32 `json:"float"`
 		} `json:"embeddings"`
 	}
-	
+
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("Cohere Parse error: %v", err)
 	}
-	
+
 	if len(result.Embeddings.Float) > 0 {
 		return result.Embeddings.Float[0], nil
 	}
-	
+
 	return nil, fmt.Errorf("empty embedding result")
 }

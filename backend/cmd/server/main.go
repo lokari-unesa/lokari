@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/jackc/pgx/v5/pgxpool"
-	
+
 	"github.com/lokari/backend/internal/api"
 	"github.com/lokari/backend/internal/config"
 	"github.com/lokari/backend/internal/worker"
@@ -36,15 +37,24 @@ func main() {
 
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
-		AppName: "LOKARI API",
+		AppName:   "LOKARI API",
+		BodyLimit: 64 * 1024, // Batasi ukuran body JSON — endpoint POST hanya /api/search
 	})
 
 	// Middleware
 	app.Use(logger.New())
 	app.Use(recover.New())
+
+	// CORS whitelist origin frontend yang dikenal.
+	// Override daftar via env CORS_ORIGINS (comma-separated) untuk domain produksi.
+	origins := os.Getenv("CORS_ORIGINS")
+	if origins == "" {
+		origins = "http://localhost:5180,http://localhost:5173"
+	}
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept",
+		AllowOrigins: origins,
+		AllowMethods: "GET,POST,HEAD,OPTIONS",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}))
 
 	// Pass dependencies to API routes

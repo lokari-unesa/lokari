@@ -23,7 +23,7 @@ func NewFetcherService(db *pgxpool.Pool) *FetcherService {
 func (s *FetcherService) FetchBMKGData() {
 	log.Println("[Zero-Admin] Memulai penarikan data gempabumi BMKG...")
 	start := time.Now()
-	
+
 	// BMKG Official JSON API for Earthquakes
 	bmkgURL := "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json"
 	status := "Sukses"
@@ -34,24 +34,27 @@ func (s *FetcherService) FetchBMKGData() {
 	}
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
-	
+
 	if err != nil {
 		log.Printf("[Zero-Admin] BMKG Fetch Error: %v\n", err)
 		status = "Gagal"
+	} else if resp.StatusCode != http.StatusOK {
+		log.Printf("[Zero-Admin] BMKG responded with status: %d\n", resp.StatusCode)
+		status = "Gagal"
 	} else {
 		defer resp.Body.Close()
-		
+
 		var data map[string]interface{}
 		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 			log.Printf("[Zero-Admin] BMKG JSON Parse Error: %v\n", err)
 			status = "Gagal"
 		} else {
 			log.Println("[Zero-Admin] Berhasil menarik data JSON Gempa dari BMKG API. Meringkas dengan AI...")
-			
+
 			// Ubah data map ke JSON string untuk dilempar ke AI
 			rawDataBytes, _ := json.Marshal(data)
 			news, err := ai.GenerateNewsSummary(context.Background(), string(rawDataBytes), "BMKG (Badan Meteorologi, Klimatologi, dan Geofisika)")
-			
+
 			if err != nil {
 				log.Printf("[Zero-Admin] Gagal meringkas berita BMKG: %v\n", err)
 			} else if s.DB != nil {
@@ -81,9 +84,13 @@ func (s *FetcherService) FetchNASAData() {
 	nasaURL := "https://eonet.gsfc.nasa.gov/api/v3/events?category=volcanoes&status=open"
 	status := "Sukses"
 
-	resp, err := http.Get(nasaURL)
-	if err != nil || resp.StatusCode != 200 {
-		log.Printf("[Zero-Admin] NASA EONET Fetch Error/Status: %v\n", err)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(nasaURL)
+	if err != nil {
+		log.Printf("[Zero-Admin] NASA EONET Fetch Error: %v\n", err)
+		status = "Gagal"
+	} else if resp.StatusCode != http.StatusOK {
+		log.Printf("[Zero-Admin] NASA EONET responded with status: %d\n", resp.StatusCode)
 		status = "Gagal"
 	} else {
 		defer resp.Body.Close()
@@ -93,7 +100,7 @@ func (s *FetcherService) FetchNASAData() {
 			status = "Gagal"
 		} else {
 			log.Println("[Zero-Admin] Berhasil menarik data JSON Vulkanik dari NASA EONET. Meringkas dengan AI...")
-			
+
 			// Ambil 5 event pertama saja agar AI tidak kelebihan context limit
 			var shortData interface{} = data
 			if events, ok := data["events"].([]interface{}); ok {
@@ -102,9 +109,9 @@ func (s *FetcherService) FetchNASAData() {
 				}
 			}
 			rawDataBytes, _ := json.Marshal(shortData)
-			
+
 			news, err := ai.GenerateNewsSummary(context.Background(), string(rawDataBytes), "NASA EONET (Earth Observatory Natural Event Tracker)")
-			
+
 			if err != nil {
 				log.Printf("[Zero-Admin] Gagal meringkas berita NASA: %v\n", err)
 			} else if s.DB != nil {
@@ -129,7 +136,7 @@ func (s *FetcherService) logUpdate(sumberAPI string, status string) {
 	if s.DB == nil {
 		return
 	}
-	
+
 	query := `INSERT INTO log_update (sumber_api, status_tarik) VALUES ($1, $2)`
 	_, err := s.DB.Exec(context.Background(), query, sumberAPI, status)
 	if err != nil {
