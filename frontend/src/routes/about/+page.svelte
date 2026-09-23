@@ -3,21 +3,21 @@
   import { i18n } from "$lib/i18n.svelte";
 
   const members = [
-    { name: "Aida Rotila", ig: "https://www.instagram.com/ar_aidaa_/" },
-    { name: "Aisyah Nur Fadila", ig: "https://www.instagram.com/aisyahfadilaa_/" },
-    { name: "Asman", ig: "https://www.instagram.com/asman.id/" },
-    { name: "Dammar Sanggalie", ig: "https://www.instagram.com/dammarsanggalie/" },
-    { name: "Ivan Yudhistira", ig: "#" },
-    { name: "Izza Mutia Aqila", ig: "https://www.instagram.com/mutiaaq17/" },
-    { name: "Muhammad Anwar Ismail", ig: "https://www.instagram.com/jinwoostream/" },
-    { name: "MUHAMMAD HIKMAL KURNIAH", ig: "https://www.instagram.com/hikmal_krn/" },
-    { name: "Musa Chang Li Panjaitan", ig: "https://www.instagram.com/musachangli_/" },
-    { name: "Orlinezar Raveda Ar-Rizky", ig: "https://www.instagram.com/ravarrizky_/" },
-    { name: "Ramzi Pandu Ma'arif ", ig: "#" },
-    { name: "Revalia Cantika Sari Setiawan", ig: "https://www.instagram.com/revaliacntikaa/" },
-    { name: "Sabrina Isna Riyani", ig: "https://www.instagram.com/sbrn_nanaa/" },
-    { name: "Stefi Febianova", ig: "https://www.instagram.com/whtvr.fn/" },
-    { name: "Yulian Devy Ryfka Prastiwi ", ig: "https://www.instagram.com/yulianprst/" }
+    { name: "Aida Rotila", ig: "https://www.instagram.com/ar_aidaa_/", pos: "object-[center_30%]" },
+    { name: "Aisyah Nur Fadila", ig: "https://www.instagram.com/aisyahfadilaa_/", pos: "object-[center_30%]" },
+    { name: "Asman", ig: "https://www.instagram.com/asman.id/", pos: "object-[center_30%]" },
+    { name: "Dammar Sanggalie", ig: "https://www.instagram.com/dammarsanggalie/", pos: "object-center" },
+    { name: "Ivan Yudhistira", ig: "#", pos: "object-[center_75%]" }, // Wajah di bawah, langit luas di atas
+    { name: "Izza Mutia Aqila", ig: "https://www.instagram.com/mutiaaq17/", pos: "object-center" },
+    { name: "Muhammad Anwar Ismail", ig: "https://www.instagram.com/jinwoostream/", pos: "object-[center_35%]" },
+    { name: "MUHAMMAD HIKMAL KURNIAH", ig: "https://www.instagram.com/hikmal_krn/", pos: "object-[center_30%]" },
+    { name: "Musa Chang Li Panjaitan", ig: "https://www.instagram.com/musachangli_/", pos: "object-[center_30%]" },
+    { name: "Orlinezar Raveda Ar-Rizky", ig: "https://www.instagram.com/ravarrizky_/", pos: "object-top" },
+    { name: "Ramzi Pandu Ma'arif ", ig: "#", pos: "object-[center_30%]" },
+    { name: "Revalia Cantika Sari Setiawan", ig: "https://www.instagram.com/revaliacntikaa/", pos: "object-[center_20%]" },
+    { name: "Sabrina Isna Riyani", ig: "https://www.instagram.com/sbrn_nanaa/", pos: "object-center" },
+    { name: "Stefi Febianova", ig: "https://www.instagram.com/whtvr.fn/", pos: "object-[center_30%]" },
+    { name: "Yulian Devy Ryfka Prastiwi ", ig: "https://www.instagram.com/yulianprst/", pos: "object-[center_30%]" }
   ];
 </script>
 
@@ -104,7 +104,7 @@
               <img 
                 src={`/assets/anggota/${m.name}.webp`} 
                 alt={m.name} 
-                class={`w-full h-full object-cover ${m.name === 'Ivan Yudhistira' || m.name === 'MUHAMMAD HIKMAL KURNIAH' ? 'object-top' : 'object-center'}`} 
+                class={`w-full h-full object-cover ${m.pos || 'object-center'}`} 
                 loading="lazy" 
               />
             </div>

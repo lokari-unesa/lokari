@@ -47,6 +47,13 @@
   let selectedData: any = $state(null);
   let rekomendasiFaskes: any = $state(null);
 
+  function getGeoCoordinates(geom: any) {
+    if (typeof geom === "string") {
+      try { return JSON.parse(geom).coordinates; } catch { return [0, 0]; }
+    }
+    return geom?.coordinates || [0, 0];
+  }
+
   function onMarkerClick(potensi: any) {
     selectedData = potensi;
     selected = true;
@@ -55,11 +62,11 @@
     if (!potensi.kategori.includes("Kesehatan")) {
       const faskesList = shelters.filter(p => p.kategori.includes("Kesehatan"));
       if (faskesList.length > 0) {
-        const pCoord = JSON.parse(potensi.geometri).coordinates;
+        const pCoord = getGeoCoordinates(potensi.geometri);
         let minDist = Infinity;
         let closest = null;
         for (const f of faskesList) {
-          const fCoord = JSON.parse(f.geometri).coordinates;
+          const fCoord = getGeoCoordinates(f.geometri);
           const d = Math.pow(pCoord[0] - fCoord[0], 2) + Math.pow(pCoord[1] - fCoord[1], 2);
           if (d < minDist) {
             minDist = d;
@@ -287,10 +294,55 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  let distanceKm = $derived(
-    calcDistance(originLat, originLng, destLat, destLng),
-  );
-  let etaMinutes = $derived(Math.max(3, Math.round((distanceKm / 15) * 60)));
+  let realDistanceKm = $state<number | null>(null);
+  let realEtaMinutes = $state<number | null>(null);
+  let routeStatus = $state<"safe" | "fallback" | "danger">("safe");
+  let routeCoords = $state<any[]>([]);
+
+  $effect(() => {
+    if (destLat !== 0 && destLng !== 0) {
+      fetch(`/api/route?start=${originLng},${originLat}&end=${destLng},${destLat}`)
+        .then(r => r.json())
+        .then(data => {
+           if (data.routes && data.routes.length > 0) {
+              const route = data.routes[0];
+              realDistanceKm = route.distance / 1000;
+              realEtaMinutes = Math.round(route.duration / 60);
+              routeStatus = route.status || (route.isSafe ? "safe" : "danger");
+              
+              const coords = route.geometry.coordinates;
+              routeCoords = [
+                [originLat, originLng],
+                ...coords.map((c: any[]) => [c[1], c[0]]),
+                [destLat, destLng]
+              ];
+           } else {
+             realDistanceKm = null;
+             realEtaMinutes = null;
+             routeStatus = "fallback";
+             routeCoords = [[originLat, originLng], [destLat, destLng]];
+           }
+        })
+        .catch(e => {
+           console.error("Gagal menarik rute:", e);
+           realDistanceKm = null;
+           realEtaMinutes = null;
+           routeStatus = "fallback";
+           routeCoords = [[originLat, originLng], [destLat, destLng]];
+        });
+    }
+  });
+
+  let distanceKm = $derived(realDistanceKm !== null ? realDistanceKm : calcDistance(originLat, originLng, destLat, destLng));
+  let etaMinutes = $derived(realEtaMinutes !== null ? realEtaMinutes : Math.max(3, Math.round((distanceKm / 15) * 60)));
+
+  function formatDistance(distKm: number) {
+    const meters = Math.round(distKm * 1000);
+    if (meters < 1000) {
+      return `${meters} Meter`;
+    }
+    return `${distKm.toFixed(1)} KM`;
+  }
 </script>
 
 {#snippet Metric(Icon: any, label: string, value: string)}
@@ -439,7 +491,7 @@
   {#if searched}
     <div class="mt-6 grid lg:grid-cols-[1fr_360px] gap-4">
       <div
-        class="relative h-105 lg:h-130 rounded-xl overflow-hidden border border-border"
+        class="relative h-105 lg:h-130 rounded-xl"
       >
         <KeludMapView
           showHazard={true}
@@ -453,6 +505,7 @@
           {originLng}
           {onMarkerClick}
           potensiData={shelters}
+          {routeCoords}
         />
 
         <!-- Floating info popover -->
@@ -462,7 +515,7 @@
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden" onclick={() => selected = false}></div>
 
-          <div class="fixed inset-0 m-auto h-fit w-[calc(100vw-2rem)] max-w-85 z-50 lg:absolute lg:inset-auto lg:top-4 lg:left-4 lg:m-0 lg:w-[320px] lg:z-10 p-5 rounded-xl bg-card border border-border shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]">
+          <div class="fixed inset-0 m-auto h-fit w-[calc(100vw-2rem)] max-w-85 z-50 lg:absolute lg:inset-auto lg:top-4 lg:left-4 lg:m-0 lg:w-[320px] lg:z-10 p-5 rounded-xl bg-card border border-border shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)] max-h-[calc(100%-2rem)] overflow-y-auto">
             <div class="flex items-start justify-between">
               <div class="flex flex-col items-start gap-3">
                 <span class="grid place-items-center w-10 h-10 rounded-lg bg-primary/10 text-primary"><ShieldCheck class="w-5 h-5" /></span>
@@ -533,7 +586,7 @@
             {@render Metric(
               RouteIcon,
               i18n.t("page.evac.route.dist"),
-              distanceKm.toFixed(1) + " km",
+              formatDistance(distanceKm),
             )}
             {@render Metric(
               Clock,
@@ -542,12 +595,28 @@
             )}
           </div>
 
-          <div class="mt-4 flex items-center gap-2 p-3 rounded-lg bg-safe/10">
-            <CheckCircle2 class="w-5 h-5 text-safe" />
-            <span class="text-[0.875rem] font-medium text-safe"
-              >{i18n.t("page.evac.route.safe")}</span
-            >
-          </div>
+          {#if routeStatus === "safe"}
+            <div class="mt-4 flex items-center gap-2 p-3 rounded-lg bg-safe/10 border border-safe/20">
+              <CheckCircle2 class="w-5 h-5 text-safe" />
+              <span class="text-[0.875rem] font-medium text-safe">{i18n.t("page.evac.route.safe")}</span>
+            </div>
+          {:else if routeStatus === "fallback"}
+            <div class="mt-4 flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
+              <AlertTriangle class="w-5 h-5 text-warning shrink-0 mt-0.5" />
+              <div class="flex flex-col">
+                <span class="text-[0.875rem] font-bold text-warning">Mode Rute Standar</span>
+                <span class="text-[0.75rem] text-warning/90 mt-0.5">Sistem penghindar zona merah sedang *offline*. Rute ini adalah rute terdekat standar. Harap perhatikan sekeliling Anda.</span>
+              </div>
+            </div>
+          {:else}
+            <div class="mt-4 flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <AlertTriangle class="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              <div class="flex flex-col">
+                <span class="text-[0.875rem] font-bold text-destructive">Peringatan: Rute Darurat!</span>
+                <span class="text-[0.75rem] text-destructive/90 mt-0.5">Rute ini terpaksa melintasi Zona Rawan Bencana karena tidak ada jalan memutar yang aman. Harap tingkatkan kewaspadaan.</span>
+              </div>
+            </div>
+          {/if}
 
           <div class="mt-4 flex flex-col gap-2">
             <a
@@ -588,7 +657,7 @@
           >
             <span class="flex items-center gap-2"
               ><RouteIcon class="w-4 h-4 text-primary" />
-              {(distanceKm * 1.5).toFixed(1)} km</span
+              {formatDistance(distanceKm * 1.5)}</span
             >
             <span class="flex items-center gap-2"
               ><Clock class="w-4 h-4 text-primary" />
@@ -596,8 +665,8 @@
             >
             <div class="mt-0.5">
               <StatusBadge
-                level="aman"
-                label={i18n.t("page.evac.alt.safe")}
+                level={routeStatus === "safe" ? "aman" : routeStatus === "fallback" ? "waspada" : "awas"}
+                label={routeStatus === "safe" ? i18n.t("page.evac.alt.safe") : routeStatus === "fallback" ? "Standar" : "Ekstra Waspada"}
                 size="sm"
                 pulse={false}
               />

@@ -63,10 +63,14 @@ export async function GET({ url, fetch }) {
             geometry: { coordinates: coords, type: "LineString" },
             distance: props.distance,
             duration: props.duration,
-            isSafe: true // Flag rute ini dijamin aman dari zona merah
+            isSafe: true, // Flag rute ini dijamin aman dari zona merah
+            status: "safe"
           }]
         });
       }
+    } else {
+      const errText = await res.text();
+      console.error("ORS API Error:", res.status, errText);
     }
   } catch (e) {
     console.error("ORS Hazard Avoidance gagal:", e);
@@ -82,7 +86,7 @@ export async function GET({ url, fetch }) {
     if (res.ok) {
       const data = await res.json();
       if (data.routes && data.routes.length > 0) {
-        return json({ ...data, routes: [{ ...data.routes[0], isSafe: false }] }); // Rute darurat (mungkin melintasi zona bahaya)
+        return json({ ...data, routes: [{ ...data.routes[0], isSafe: false, status: "fallback" }] }); // Rute darurat / Fallback
       }
     }
   } catch (e) {

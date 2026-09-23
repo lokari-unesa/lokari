@@ -1,140 +1,104 @@
-# LOKARI (Lokasi Aman & Rute Evakuasi) 🌋
+# LOKARI (Lokasi Relokasi & Evakuasi Mandiri)
 
-LOKARI adalah platform cerdas berbasis mitigasi bencana (khususnya Gunung Kelud untuk Desa Jarak, Kediri). Sistem ini memadukan **Database Spasial (PostGIS)**, **Zero-Admin Cron Worker**, dan **Spatial AI (Semantic Search & NLP Summarizer)** menggunakan `pgvector`, DeepSeek, dan Hugging Face.
+Selamat datang di repositori **LOKARI**! 
+LOKARI adalah sebuah aplikasi pemetaan berbasis *website* yang cerdas dan interaktif, dirancang khusus untuk memandu dan memitigasi dampak bencana erupsi **Gunung Kelud**, khususnya bagi warga Desa Jarak, Kabupaten Kediri dan sekitarnya.
 
-Proyek ini dibangun menggunakan **SvelteKit (Frontend)** dan **Golang Fiber (Backend)**.
+Aplikasi ini dilengkapi dengan fitur:
+- **Peta Interaktif** dengan zona bahaya (KRB) langsung dari data satelit.
+- **Pencarian Semantik AI (Vektor)** untuk mencari posko pengungsian atau fasilitas kesehatan terdekat dengan bahasa alami.
+- **Rute Evakuasi Cerdas** yang secara otomatis menghindari Zona Merah.
+- **Peringatan Dini Bencana** yang menarik data *real-time* dari satelit NASA EONET.
+
+Proyek ini dibangun menggunakan **SvelteKit** (Frontend) dan **Go / Fiber** (Backend) dengan dukungan *database* **PostgreSQL (pgvector)**.
 
 ---
 
-## Prasyarat (Prerequisites)
-Sebelum menjalankan proyek ini, pastikan komputer/server Anda sudah terinstal:
-1. **Git**
-2. **Node.js** (Minimal versi 18.x) - *Untuk Frontend SvelteKit*
-3. **Go (Golang)** (Minimal versi 1.21) - *Untuk Backend API*
+## Panduan Memulai (Untuk Pemula)
 
----
+Jangan khawatir jika kamu baru pertama kali memegang *project* ini! Ikuti langkah-langkah di bawah ini secara berurutan.
 
-## Langkah Instalasi
+### 1. Persiapan Alat Tempur
+Sebelum memulai, pastikan kamu sudah meng-*install* aplikasi berikut di komputermu:
+- [Git](https://git-scm.com/downloads) (Untuk mengunduh kodingan).
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Wajib untuk menjalankan *database* dan lingkungan *server* secara instan).
+- [Node.js](https://nodejs.org/) (Jika ingin menjalankan Frontend secara manual).
+- [Go](https://go.dev/dl/) (Jika ingin menjalankan Backend secara manual).
 
-### 1. Clone Repository
+### 2. Cara Mengunduh (Clone) Projek
+Buka Terminal / Command Prompt / Git Bash, lalu jalankan perintah ini:
 ```bash
-git clone <URL_REPO_GITHUB_ANDA>
+git clone https://github.com/USERNAME/LOKARI.git
 cd LOKARI
 ```
-
-### 2. Setup Database (PostgreSQL + PostGIS + pgvector)
-Anda bisa memilih salah satu dari dua cara di bawah ini untuk menghidupkan database:
-
-#### Opsi A: Menggunakan Docker (Sangat Direkomendasikan)
-Cara paling mudah tanpa perlu menginstal PostgreSQL secara manual. Pastikan Docker Desktop menyala.
-1. Dari root proyek, jalankan database saja: `docker compose up -d db`
-   *(atau `docker compose up -d --build` untuk full-stack dev, lihat bagian Docker di bawah)*
-*(Database akan berjalan di port host `5433`).*
-
-#### Opsi B: Instalasi Manual (Native / Tanpa Docker)
-Jika Anda tidak menggunakan Docker, instal secara manual sesuai Sistem Operasi Anda:
-
-**Untuk Windows:**
-1. Unduh dan instal PostgreSQL via *EnterpriseDB installer*.
-2. Setelah instalasi selesai, buka aplikasi bawaannya yaitu **Application Stack Builder**.
-3. Pilih server PostgreSQL Anda pada menu *dropdown*, lalu klik Next.
-4. Buka kategori **Spatial Extensions**, centang **PostGIS** dan ikuti proses instalasinya sampai selesai.
-*(Catatan: Menginstal ekstensi `pgvector` secara manual di Windows cukup rumit karena mewajibkan kompilasi C++ Visual Studio. Untuk pengembangan di Windows, sangat disarankan beralih memakai Docker).*
-
-**Untuk Server Linux (Ubuntu/Debian):**
-Buka terminal server Anda dan jalankan deretan perintah berikut (ganti angka `16` sesuai versi PostgreSQL yang Anda inginkan):
-```bash
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-sudo apt install postgis postgresql-16-postgis-3
-sudo apt install postgresql-16-pgvector
-```
+*(Ganti tulisan `USERNAME` dengan nama akun GitHub tempat repositori ini berada).*
 
 ---
 
-### 3. Konfigurasi Backend (Golang)
-Masuk ke folder `backend`, salin contoh env lalu isi nilai aslinya:
+## Menjalankan Projek Menggunakan Docker (Cara Paling Mudah)
+
+Dengan Docker, kamu tidak perlu repot *install* *database* secara manual. Cukup jalankan 1 perintah, semuanya akan menyala!
+
+### Langkah-langkah:
+1. Pastikan **Docker Desktop** sudah menyala (buka aplikasinya dan tunggu hingga ikon *engine* berwarna hijau).
+2. Buka terminal di dalam folder `LOKARI`.
+3. Jalankan perintah ajaib ini:
+   ```bash
+   docker compose up --build -d
+   ```
+4. Tunggu beberapa saat. Docker akan mengunduh dan merakit Frontend, Backend, dan Database secara otomatis.
+5. Jika sudah selesai, buka *browser* dan ketik:
+   - Frontend (Web LOKARI): `http://localhost:5180`
+   - Backend API: `http://localhost:5181`
+
+### Menyiapkan Tabel dan Mengisi Database (Migrasi & Seeder)
+Jika kamu menjalankan proyek ini di laptop baru, *database* PostgreSQL di Docker masih sepenuhnya kosong. Kamu harus menjalankan perintah migrasi tabel terlebih dahulu sebelum mengisinya dengan data.
+
+1. **Jalankan Migrasi Tabel Utama:**
+   Membuat struktur tabel peta, titik lokasi, dan fitur AI.
+   ```bash
+   docker compose exec backend go run scripts/migrate.go
+   ```
+2. **Jalankan Migrasi Tabel Berita (Kabar Kelud):**
+   Membuat tabel untuk menyimpan berita bencana.
+   ```bash
+   docker compose exec backend go run scripts/migrate_news.go
+   ```
+3. **Isi Database dengan Vektor AI (Seeder):**
+   Memasukkan 58 titik kumpul dan posko dari file teks, lalu men-*generate* vektor AI-nya.
+   ```bash
+   docker compose exec backend go run scripts/seed_claude.go
+   ```
+Tunggu hingga proses ekstraksi AI selesai 100%!
+
+---
+
+## Menjalankan Projek Secara Manual (Tanpa Docker Penuh)
+
+Jika kamu ingin ngoding dan melihat perubahannya secara langsung (*hot-reload*), gunakan cara ini:
+
+### 1. Nyalakan Database Saja (Via Docker)
+Kamu tetap butuh Docker HANYA untuk *database* PostgreSQL.
 ```bash
-cp backend/.env.example backend/.env   # lalu edit nilainya
+docker compose up -d db
 ```
 
-Isi `backend/.env` (file ini TIDAK di-commit):
-```env
-PORT=5181
-# Jika pakai Docker (host port 5433 -> container 5432):
-DATABASE_URL=postgresql://postgres:root@127.0.0.1:5433/lokari_db?sslmode=disable
-# Jika install manual lokal (Port 5432):
-# DATABASE_URL=postgresql://postgres:root@127.0.0.1:5432/lokari_db?sslmode=disable
-
-# AI untuk rangkuman berita/alert (provider OpenAI-compatible: OpenRouter/Groq/DeepSeek)
-AI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-AI_BASE_URL=https://openrouter.ai/api/v1
-AI_MODEL=openrouter/free
-
-# AI untuk vector embeddings (semantic search, dimensi 1024)
-COHERE_API_KEY=cohere_xxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-**Frontend (opsional):** tidak wajib punya `.env` — default sudah `VITE_PORT=5180` dan proxy `/api` → `http://localhost:5181`. Salin `frontend/.env.example` ke `frontend/.env` hanya bila ingin mengubahnya.
-
-**Docker Compose — dua mode (disarankan):**
-
-| Mode | Perintah | Keterangan |
-|---|---|---|
-| **Development** (default) | `docker compose up -d --build` | Hot reload: backend `air`, frontend `vite dev` + bind mount kode |
-| **Production / Build** | `docker compose -f docker-compose.yaml up -d --build` | Backend: binary statis (alpine). Frontend: bundle `@sveltejs/adapter-node` (`node build`) |
-
-> Mode development dimuat otomatis lewat `docker-compose.override.yaml`. Untuk production murni, jalankan tanpa override dengan `-f docker-compose.yaml`.
-> Interpolasi port & kredensial DB bisa diatur lewat `.env` di root (opsional, contoh: `.env.example`). Rahasia backend tetap di `backend/.env`.
-> Di mode production tidak ada vite proxy, jadi `/api/*` diteruskan ke backend Go via `src/hooks.server.ts`.
-
-**Instal dependensi Go:**
+### 2. Jalankan Backend (Go)
+Buka terminal baru, masuk ke folder `backend`, lalu jalankan:
 ```bash
+cd backend
 go mod tidy
+go run ./cmd/server/main.go
 ```
+*(Backend akan menyala di port 5181).*
 
-**Inisialisasi Database (Hanya dilakukan 1x di awal):**
-Ini akan secara otomatis membuat tabel, mengaktifkan `postgis`, dan membuat kolom `vector(1024)`.
+### 3. Jalankan Frontend (SvelteKit)
+Buka terminal baru lagi, masuk ke folder `frontend`, lalu jalankan:
 ```bash
-go run scripts/migrate.go
-```
-
-**Jalankan Backend — mode Development (hot-reload otomatis dengan air):**
-```bash
-air
-```
-*(Pastikan `air` terinstal: `go install github.com/air-verse/air@latest`).*
-
-**Jalankan Backend — mode Production (binary):**
-```bash
-go build -o main ./cmd/server/main.go && ./main
-```
-*(Backend akan berjalan di `http://localhost:5181`. Zero-Admin Cron Job akan otomatis menarik data dari NASA setiap 1 jam).*
-
----
-
-### 4. Konfigurasi Frontend (SvelteKit)
-Buka tab terminal/PowerShell **baru**, lalu arahkan ke folder frontend:
-```bash
-cd ../frontend
-```
-
-**Instal dependensi Node.js:**
-```bash
+cd frontend
 npm install
-```
-
-**Jalankan Frontend — mode Development (vite dev server):**
-```bash
 npm run dev
 ```
-*(Frontend akan berjalan di `http://localhost:5180`. Tekan tombol `o` di terminal, atau klik tautan tersebut untuk membukanya di browser).*
-
-**Jalankan Frontend — mode Production (bundle adapter-node):**
-```bash
-npm run build && npm run preview
-```
-*(Preview menjalankan hasil build; `/api/*` diteruskan ke backend Go via `src/hooks.server.ts` — backend lokal harus jalan di `http://localhost:5181`. Nilai target bisa diganti lewat env `BACKEND_URL`).*
+*(Frontend akan menyala di port 5173. Silakan buka http://localhost:5173).*
 
 ---
 
@@ -204,8 +168,44 @@ menjalankannya. Secrets yang dibutuhkan di repo tersebut: `VERCEL_TOKEN`,
 
 ---
 
-## Catatan Khusus Modul AI
-1. **GET `/api/alert`**: Rute ini akan menarik data satelit dari **NASA EONET**, kemudian diringkas menggunakan **DeepSeek API** menjadi bahasa Indonesia yang ramah warga.
-2. **POST `/api/search`**: Menerima input kalimat acak (contoh: *"posko evakuasi lahar terdekat"*), mengubahnya jadi vektor memakai **Hugging Face**, lalu dicarikan dengan jarak semantik `<=>` dari ekstensi `pgvector`.
+## 6. Panduan Deployment (Hosting ke VPS Server)
 
-✨ **Semangat untuk tim LOKARI Universitas Negeri Surabaya (UNESA)!** ✨
+Jika aplikasi LOKARI sudah siap *go-public* dan ingin di- *hosting* ke server VPS (misal: AWS, DigitalOcean, atau IDCloudHost), ada 2 metode yang bisa kamu pilih:
+
+### Opsi A: Deployment Penuh via Docker (Direkomendasikan)
+Cara ini paling bersih dan persis sama seperti saat kita menjalankannya di laptop lokal.
+
+1. Beli VPS berbasis Linux (Ubuntu).
+2. *Install* Git dan Docker di VPS.
+3. *Clone* repositori ini ke VPS.
+4. Ubah sedikit *file* `.env` jika ada URL API produksi yang perlu diubah.
+5. Jalankan perintah andalan:
+   ```bash
+   docker compose up --build -d
+   ```
+6. Opsional: *Install* NGINX di VPS (luar Docker) sebagai *Reverse Proxy* untuk mengarahkan Domain (misal: `lokari.com`) ke `localhost:5180` dan memasang SSL (HTTPS) menggunakan *Certbot/Let's Encrypt*.
+
+### Opsi B: NGINX + PM2 (Frontend/Backend) & Docker (Database Saja)
+Cara tradisional ini cocok jika kamu ingin memantau *service* menggunakan PM2.
+
+1. **Database:**
+   Di VPS, jalankan HANYA *database* menggunakan Docker.
+   ```bash
+   docker compose up -d db
+   ```
+2. **Backend (Go):**
+   - Lakukan *build* aplikasi Go: `cd backend && go build -o lokari-app ./cmd/server/main.go`
+   - *Install* PM2 (via Node.js).
+   - Jalankan backend dengan PM2: `pm2 start ./lokari-app --name "lokari-backend"`
+3. **Frontend (SvelteKit Node Adapter):**
+   - Lakukan *build* Svelte: `cd frontend && npm install && npm run build`
+   - Ini akan menghasilkan folder `build/`.
+   - Jalankan *frontend* dengan PM2: `pm2 start build/index.js --name "lokari-frontend"`
+4. **NGINX Reverse Proxy:**
+   - Konfigurasi `/etc/nginx/sites-available/lokari` untuk meneruskan lalu lintas:
+     - `lokari.com` → `http://localhost:5180` (port SvelteKit)
+     - `api.lokari.com` → `http://localhost:5181` (port Go Backend)
+   - Pasang sertifikat SSL.
+
+---
+*Dibuat oleh Tim Universitas Negeri Surabaya untuk warga Desa Jarak.*
