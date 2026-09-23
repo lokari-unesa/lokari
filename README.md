@@ -138,6 +138,72 @@ npm run build && npm run preview
 
 ---
 
+## 5. Deploy Frontend ke Vercel (Serverless)
+
+> **Arsitektur deploy:** Hanya **frontend SvelteKit** yang serverless di Vercel.
+> Backend Go (Fiber) tetap berjalan sebagai server biasa (VPS/Docker/Railway/Render/dsb.),
+> dan frontend meneruskan `/api/*` ke backend lewat `src/hooks.server.ts`.
+
+### 5.1 Prasyarat
+
+1. **Backend Go sudah jalan di suatu host dengan URL publik HTTPS**
+   (contoh: `https://lokari-api.example.com`). Pastikan endpoint
+   `GET /api/health` bisa diakses publik.
+2. **Database PostgreSQL + PostGIS + pgvector** yang bisa diakses backend.
+   Cocok pakai **Neon** (supports PostGIS & pgvector) atau Supabase.
+   Skema didaftarkan sekali dari lokal: `go run scripts/migrate.go` pada `backend/`.
+3. **Akun Vercel** dan repo ini sudah di-push ke GitHub/GitLab.
+
+### 5.2 Langkah Deploy (Dashboard Vercel)
+
+1. **Import project** dari repo GitHub → pilih **Root Directory: `frontend`**.
+   - Framework terdeteksi otomatis (SvelteKit) berkat `frontend/vercel.json`.
+   - Build command otomatis `npm run build` (adapter-vercel menghasilkan output serverless).
+2. Set **Environment Variables** (Settings → Environment Variables):
+   | Variabel | Keterangan |
+   |---|---|
+   | `BACKEND_URL` | URL publik backend Go, mis. `https://lokari-api.example.com` |
+   | `ORS_API_KEY` | API key OpenRouteService (untuk `/api/route`) |
+3. **Deploy.** Selesai.
+
+> ⚠️ **Keamanan:** API key OpenRouteService WAJIB disimpan sebagai env
+> `ORS_API_KEY` (server-only, dibaca di `src/routes/api/route/+server.ts`),
+> jangan pernah di-hardcode di source code.
+
+### 5.3 Cara kerja `/api/*` di Vercel
+
+- `/api/route` → ditangani endpoint SvelteKit sendiri (`src/routes/api/route/+server.ts`,
+  routing ORS/OSRM).
+- `/api/potensi`, `/api/news`, `/api/search`, `/api/alert`, `/api/health` →
+  request jatuh ke fungsi SSR → `src/hooks.server.ts` meneruskan ke `BACKEND_URL`
+  (server-side, jadi tidak ada masalah CORS).
+- Var env `BACKEND_URL` dibaca runtime via `$env/dynamic/private`
+  (default fallback `http://localhost:5181` hanya untuk dev lokal).
+
+### 5.4 Node.js runtime
+
+- `frontend/vercel.json` + `frontend/svelte.config.js` mem-pin runtime
+  **`nodejs22.x`** (Vercel mendukung 20/22/24). Jangan pindah ke `edge` —
+  `hooks.server.ts` dan `+server.ts` memerlukan Node runtime.
+
+### 5.5 Deploy lewat CLI (opsional)
+
+```bash
+cd frontend
+npx vercel link          # hubungkan ke project Vercel (root directory: frontend)
+npx vercel env add BACKEND_URL   # tambahkan variabel env
+npx vercel --prod
+```
+
+### 5.6 GitHub Actions (CI/CD)
+
+Workflow di `.github/workflows/` dibatasi hanya berjalan di repo tim
+(`lokari-unesa/lokari`) lewat `if: github.repository == ...` — repo fork tidak
+menjalankannya. Secrets yang dibutuhkan di repo tersebut: `VERCEL_TOKEN`,
+`ORG_ID`, `PROJECT_ID`.
+
+---
+
 ## Catatan Khusus Modul AI
 1. **GET `/api/alert`**: Rute ini akan menarik data satelit dari **NASA EONET**, kemudian diringkas menggunakan **DeepSeek API** menjadi bahasa Indonesia yang ramah warga.
 2. **POST `/api/search`**: Menerima input kalimat acak (contoh: *"posko evakuasi lahar terdekat"*), mengubahnya jadi vektor memakai **Hugging Face**, lalu dicarikan dengan jarak semantik `<=>` dari ekstensi `pgvector`.

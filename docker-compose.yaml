@@ -6,22 +6,6 @@
 #   docker compose up -d          # override dimuat otomatis oleh compose
 # ================================================================
 services:
-  frontend:
-    container_name: lokari-frontend
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      # target default = stage final (prod): server adapter-node
-    ports:
-      - "${FRONTEND_PORT:-5180}:${FRONTEND_PORT:-5180}"
-    depends_on:
-      - backend
-    environment:
-      VITE_PORT: ${FRONTEND_PORT:-5180}
-      BACKEND_URL: http://backend:${BACKEND_PORT:-5181}
-    networks:
-      - lokari-network
-
   backend:
     container_name: lokari-backend
     restart: on-failure

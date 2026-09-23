@@ -1,0 +1,70 @@
+name: Check Build & Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-check:
+    name: frontend check build and lint
+    if: github.repository == 'lokari-unesa/lokari'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check (svelte-check)
+        run: npm run check
+
+      - name: Build application
+        run: npm run build
+
+  backend-check:
+    name: backend check build and vet
+    if: github.repository == 'lokari-unesa/lokari'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Vet code
+        run: go vet ./...
+
+      - name: Compile all packages (smoke test)
+        run: go test ./...
+
+      - name: Build application
+        run: CGO_ENABLED=0 go build -ldflags="-s -w" -o /tmp/lokari-server ./cmd/server/main.go
