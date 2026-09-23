@@ -2,7 +2,7 @@ name: Create vercel preview URL on pull request
 on:
   pull_request:
     branches:
-      - main
+      - master
 jobs:
   build_and_deploy:
     if: github.repository == 'lokari-unesa/lokari' && github.event.pull_request.head.repo.full_name == github.repository
