@@ -90,7 +90,8 @@ func (s *FetcherService) FetchNASAData() {
 	nasaURL := "https://eonet.gsfc.nasa.gov/api/v3/events?category=volcanoes&status=open"
 	status := "Sukses"
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	// EONET sering respons lambat (>10 detik), beri kelonggaran 60 detik.
+	client := &http.Client{Timeout: 60 * time.Second}
 	resp, err := client.Get(nasaURL)
 	if err != nil {
 		log.Printf("[Zero-Admin] NASA EONET Fetch Error: %v\n", err)
