@@ -2,37 +2,64 @@ package worker
 
 import (
 	"log"
+	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lokari/backend/internal/service"
 	"github.com/robfig/cron/v3"
 )
 
+// StartCronJobs menjadwalkan dua siklus penarikan data:
+//
+//	Hot loop  — tiap 30 detik: gempa BMKG terbaru & status Gunung Kelud
+//	            (ancaman yang butuh respon cepat / peringatan dini).
+//	Cold loop — tiap 6 jam: laporan harian MAGMA & event NASA EONET
+//	            (informasi pelengkap, hemat kuota API).
 func StartCronJobs(db *pgxpool.Pool) *cron.Cron {
 	c := cron.New()
 	fetcher := service.NewFetcherService(db)
 
 	log.Println("[Zero-Admin] Menginisialisasi jadwal Cron Worker...")
 
-	// Jalankan setiap 6 jam (Sesuai kesepakatan untuk menghemat kuota API)
-	// Format Cron: Menit Jam Tanggal Bulan Hari
-	job := func() {
-		fetcher.FetchBMKGData()
+	// Mutex mencegah dua siklus hot loop bertabrakan bila satu fetch lebih
+	// lambat dari interval 30 detik (tick berikutnya dilewati, tidak menumpuk).
+	var hotMu sync.Mutex
+	hotLoop := func() {
+		if !hotMu.TryLock() {
+			return
+		}
+		defer hotMu.Unlock()
+		fetcher.FetchBMKGFeltQuakes()
+		fetcher.FetchKeludStatus()
+	}
+
+	var coldMu sync.Mutex
+	coldLoop := func() {
+		if !coldMu.TryLock() {
+			return
+		}
+		defer coldMu.Unlock()
+		fetcher.FetchMagmaLaporan()
 		fetcher.FetchNASAData()
 	}
 
-	entryID, err := c.AddFunc("0 */6 * * *", job)
+	hotEntry, err := c.AddFunc("@every 30s", hotLoop)
 	if err != nil {
-		log.Fatalf("Gagal menjadwalkan Cron: %v", err)
+		log.Fatalf("Gagal menjadwalkan hot loop: %v", err)
 	}
 
-	// Jalankan sekali saat server baru menyala (agar tidak menunggu slot cron
-	// berikutnya) — lewat entry yang sama, bukan pemanggilan ganda, sehingga
-	// data pertama tidak ditarik dua kali secara bersamaan di startup.
-	go c.Entry(entryID).Job.Run()
+	coldEntry, err := c.AddFunc("0 */6 * * *", coldLoop)
+	if err != nil {
+		log.Fatalf("Gagal menjadwalkan cold loop: %v", err)
+	}
+
+	// Jalankan sekali saat server menyala agar tidak menunggu slot berikutnya
+	// (via entry yang sama, bukan pemanggilan ganda → data pertama tidak
+	// ditarik dua kali secara bersamaan di startup).
+	go c.Entry(hotEntry).Job.Run()
+	go c.Entry(coldEntry).Job.Run()
 
 	c.Start()
-	log.Println("[Zero-Admin] Cron Worker berhasil dijalankan di latar belakang.")
-	
+	log.Println("[Zero-Admin] Cron Worker berjalan: hot loop 30 detik, cold loop 6 jam.")
 	return c
 }
