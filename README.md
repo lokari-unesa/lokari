@@ -53,51 +53,62 @@ Dengan Docker, kamu tidak perlu repot *install* *database* secara manual. Cukup 
 ### Menyiapkan Tabel dan Mengisi Database (Migrasi & Seeder)
 Jika kamu menjalankan proyek ini di laptop baru, *database* PostgreSQL di Docker masih sepenuhnya kosong. Kamu harus menjalankan perintah migrasi tabel terlebih dahulu sebelum mengisinya dengan data.
 
-1. **Jalankan Migrasi Tabel Utama:**
-   Membuat struktur tabel peta, titik lokasi, dan fitur AI.
+1. **Jalankan Migrasi Database (semua tabel):**
+   Membuat seluruh skema: tabel peta & titik lokasi (`kategori_layer`, `potensi_bencana`, `log_update`), berita (`kabar_kelud`), push (`push_subscriptions`), dan state monitor (`monitor_state`). Idempotent — aman dijalankan ulang.
    ```bash
    docker compose exec backend go run scripts/migrate.go
    ```
-2. **Jalankan Migrasi Tabel Berita (Kabar Kelud):**
-   Membuat tabel untuk menyimpan berita bencana.
+2. **Isi Database dengan Vektor AI (Seeder):**
+   Memasukkan titik kumpul dan posko dari file teks, lalu men-*generate* vektor AI-nya.
    ```bash
-   docker compose exec backend go run scripts/migrate_news.go
-   ```
-3. **Isi Database dengan Vektor AI (Seeder):**
-   Memasukkan 58 titik kumpul dan posko dari file teks, lalu men-*generate* vektor AI-nya.
-   ```bash
-   docker compose exec backend go run scripts/seed_claude.go
+   docker compose exec backend go run scripts/seed.go
    ```
 Tunggu hingga proses ekstraksi AI selesai 100%!
 
-> **Reset database (opsional):** untuk menghapus seluruh data lalu membangun ulang skema dan data dari nol, jalankan:
+> **Reset database (opsional):** untuk menghapus seluruh data lalu membangun ulang skema dari nol, jalankan:
 > ```bash
-> docker compose exec backend go run scripts/reset.go
+> docker compose exec backend go run scripts/migrate.go reset
 > ```
-> Skrip ini **meminta konfirmasi `y/N`** sebelum menghapus apa pun, lalu menjalankan migrasi (`migrate.go` + `migrate_news.go`) dan menawarkan seed ulang.
+> Skrip ini **meminta konfirmasi `y/N`** sebelum menghapus apa pun, lalu menjalankan migrasi lengkap dan menawarkan seed ulang.
 
 > **Backfill embedding (opsional):** jika ada baris lama yang belum punya vektor (mis. hasil seed sebelum fitur AI embedding ada), lengkapi dengan:
 > ```bash
-> docker compose exec backend go run scripts/backfill_embedding.go
+> docker compose exec backend go run scripts/seed.go backfill
 > ```
 > Skrip ini hanya memproses baris dengan `embedding IS NULL` (idempotent).
+
+> **Bersihkan duplikat potensi (opsional):** bila ada baris ganda di `potensi_bencana` (mis. hasil input manual):
+> ```bash
+> docker compose exec backend go run scripts/seed.go dedupe
+> ```
+
+> **Trigger manual job penarikan data (opsional):** untuk langsung menarik data tanpa menunggu jadwal cron (hot loop = 30 detik, cold loop = 6 jam) — misalnya sesaat setelah server dinyalakan atau saat pengujian:
+> ```bash
+> docker compose exec backend go run scripts/ops.go hot    # gempa BMKG + status Gunung Kelud
+> docker compose exec backend go run scripts/ops.go cold   # laporan harian MAGMA + event EONET
+> docker compose exec backend go run scripts/ops.go all    # hot + cold sekaligus
+> ```
+>
+> **Image produksi (tanpa Go toolchain):** binary migrasi/seed/ops sudah dibundle di image prod, jadi perintah di atas tinggal diganti `go run scripts/X.go` dengan binary-nya:
+> ```bash
+> docker compose exec backend lokari-migrate              # migrasi / reset
+> docker compose exec backend lokari-seed backfill        # seed / backfill / dedupe
+> docker compose exec backend lokari-ops hot              # hot / cold / all / push / vapid
+> ```
 
 ### Web Push Notification (opsional)
 Notifikasi browser dikirim oleh backend setelah berita bencana baru tersimpan. Cara mengaktifkan:
 
 1. **Generate pasangan VAPID key** (sekali saja):
    ```bash
-   docker compose exec backend go run scripts/vapid.go
+   docker compose exec backend go run scripts/ops.go vapid
    ```
 2. **Isi env** — salin `VAPID_PUBLIC_KEY` & `VAPID_PRIVATE_KEY` ke `backend/.env`, lalu set `PUBLIC_VAPID_KEY` di `frontend/.env` **dengan public key yang sama** (lihat `backend/.env.example` & `frontend/.env.example`).
-3. **Buat tabel subscription:**
-   ```bash
-   docker compose exec backend go run scripts/migrate_push.go
-   ```
+3. Tabel `push_subscriptions` sudah dibuat oleh `scripts/migrate.go` (lihat bagian migrasi di atas).
 4. Pastikan frontend dibuka lewat **HTTPS** atau `localhost` (persyaratan browser untuk Web Push). Setiap berita baru yang berhasil disimpan akan otomatis memicu notifikasi ke semua perangkat yang sudah subscribe.
 5. **Uji kirim notifikasi manual** (tanpa menunggu berita baru):
    ```bash
-   docker compose exec backend go run scripts/test_push.go
+   docker compose exec backend go run scripts/ops.go push
    ```
    Skrip ini mengirim notifikasi uji ke seluruh perangkat yang sudah subscribe dan sekalian membersihkan subscription yang sudah tidak valid (HTTP 410/404).
 
