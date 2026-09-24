@@ -1,18 +1,20 @@
 name: Create vercel preview URL on pull request
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - master
 jobs:
   build_and_deploy:
-    if: github.repository == 'lokari-unesa/lokari' && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.repository == 'lokari-unesa/lokari'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
-      repository-projects: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
       - uses: amondnet/vercel-action@v42
         id: vercel-deploy
         with:
