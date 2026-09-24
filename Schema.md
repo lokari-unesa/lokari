@@ -19,7 +19,7 @@ CREATE TABLE potensi_bencana (
     foto_lokasi VARCHAR(255),
     kontak_darurat VARCHAR(50),
     geometri GEOMETRY(POINT, 4326), -- PostGIS Point
-    embedding VECTOR(384)           -- Ekstensi pgvector untuk Semantic Search
+    embedding VECTOR(1024)          -- pgvector, vektor dari Cohere embed-multilingual-v3.0 (1024 dimensi)
 );
 
 -- Indexing untuk kecepatan pencarian spasial dan semantik
