@@ -43,21 +43,13 @@ func StartCronJobs(db *pgxpool.Pool) *cron.Cron {
 		fetcher.FetchNASAData()
 	}
 
-	hotEntry, err := c.AddFunc("@every 30s", hotLoop)
-	if err != nil {
+	if _, err := c.AddFunc("@every 30s", hotLoop); err != nil {
 		log.Fatalf("Gagal menjadwalkan hot loop: %v", err)
 	}
 
-	coldEntry, err := c.AddFunc("0 */6 * * *", coldLoop)
-	if err != nil {
+	if _, err := c.AddFunc("0 */6 * * *", coldLoop); err != nil {
 		log.Fatalf("Gagal menjadwalkan cold loop: %v", err)
 	}
-
-	// Jalankan sekali saat server menyala agar tidak menunggu slot berikutnya
-	// (via entry yang sama, bukan pemanggilan ganda → data pertama tidak
-	// ditarik dua kali secara bersamaan di startup).
-	go c.Entry(hotEntry).Job.Run()
-	go c.Entry(coldEntry).Job.Run()
 
 	c.Start()
 	log.Println("[Zero-Admin] Cron Worker berjalan: hot loop 30 detik, cold loop 6 jam.")
