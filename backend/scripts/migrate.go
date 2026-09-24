@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS potensi_bencana (
     alamat_dusun VARCHAR(255),
     kapasitas_orang INTEGER,
     geometri GEOMETRY,
-    embedding vector(1024),
+    embedding vector(1024), -- vektor dari Cohere embed-multilingual-v3.0 (1024 dimensi)
     foto_lokasi VARCHAR(255),
     kontak_darurat VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
