@@ -58,7 +58,11 @@
 			});
 
 			const subJSON = subscription.toJSON();
-			await fetch('http://localhost:5181/api/subscribe', {
+			// Relatif /api/* agar konsisten dengan halaman lain:
+			//   - dev manual   → vite proxy (vite.config.ts)
+			//   - build/prod   → hooks.server.ts (BACKEND_URL)
+			// Hardcoded localhost:5181 hanya jalan dari mesin dev sendiri.
+			await fetch('/api/subscribe', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
