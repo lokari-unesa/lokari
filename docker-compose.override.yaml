@@ -36,3 +36,16 @@ services:
     # host — akses hanya lewat jaringan internal "lokari-network".
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
+
+  adminer:
+    container_name: lokari-db-adminer
+    # Web UI ringan untuk melihat/menjelajah database (dev only).
+    # Buka http://localhost:8080 → pilih "PostgreSQL":
+    #   server=db, user=postgres, password=sama dengan POSTGRES_PASSWORD di .env root
+    image: adminer:4.8.1
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    depends_on:
+      - db
+    networks:
+      - lokari-network
