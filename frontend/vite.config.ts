@@ -52,6 +52,10 @@ export default defineConfig(({ mode }) => {
 				'/api/health': {
 					target: process.env.BACKEND_URL || env.BACKEND_URL || 'http://localhost:5181',
 					changeOrigin: true
+				},
+				'/api/subscribe': {
+					target: process.env.BACKEND_URL || env.BACKEND_URL || 'http://localhost:5181',
+					changeOrigin: true
 				}
 			},
 
