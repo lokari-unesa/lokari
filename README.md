@@ -95,6 +95,11 @@ Notifikasi browser dikirim oleh backend setelah berita bencana baru tersimpan. C
    docker compose exec backend go run scripts/migrate_push.go
    ```
 4. Pastikan frontend dibuka lewat **HTTPS** atau `localhost` (persyaratan browser untuk Web Push). Setiap berita baru yang berhasil disimpan akan otomatis memicu notifikasi ke semua perangkat yang sudah subscribe.
+5. **Uji kirim notifikasi manual** (tanpa menunggu berita baru):
+   ```bash
+   docker compose exec backend go run scripts/test_push.go
+   ```
+   Skrip ini mengirim notifikasi uji ke seluruh perangkat yang sudah subscribe dan sekalian membersihkan subscription yang sudah tidak valid (HTTP 410/404).
 
 ---
 
