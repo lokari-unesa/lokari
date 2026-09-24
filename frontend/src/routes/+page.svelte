@@ -22,18 +22,14 @@
   import { cn } from "$lib/utils";
   import { formatNewsDate } from "$lib/date";
 
-  let alertData = $state({
-    sumber: "Sistem Lokal",
-    pesan: i18n.t('status.desc') as string,
-    waktu: i18n.t('info.date.now') as string,
-    kategori: "warning",
-    judul: i18n.t('status.title') as string
-  });
-  let isLoadingAlert = $state(true);
+  // Status Gunung Kelud (sumber kebenaran: /api/kelud/status dari monitor_state)
+  let keludStatus = $state<{ status: string; updated_at: string } | null>(null);
+  let isLoadingStatus = $state(true);
 
   let potensiData = $state<any[]>([]);
   let newsItems = $state<any[]>([]);
   let selectedNews = $state<any>(null);
+  let isLoadingAlert = $state(true);
 
   // Mapping kategori ke Ikon dan Warna untuk InfoCard
   const categoryMeta: Record<string, any> = {
@@ -57,7 +53,62 @@
     "warning": "warning"
   };
 
+  // ---- Logika status Gunung Kelud ----
+  type KeludLevel = "normal" | "waspada" | "siaga" | "awas";
+
+  const KELUD_TEXT_KEY: Record<KeludLevel, string> = {
+    normal: "status.normal",
+    waspada: "status.waspada",
+    siaga: "status.siaga",
+    awas: "status.awas",
+  };
+
+  const statusTheme: Record<KeludLevel, { border: string; iconBg: string; iconText: string; heading: string }> = {
+    normal:  { border: "border-safe/30",        iconBg: "bg-safe/10",        iconText: "text-safe",        heading: "text-safe" },
+    waspada: { border: "border-warning/30",     iconBg: "bg-warning/20",     iconText: "text-warning",     heading: "text-warning" },
+    siaga:   { border: "border-secondary/30",   iconBg: "bg-secondary/10",   iconText: "text-secondary",   heading: "text-secondary" },
+    awas:    { border: "border-destructive/30", iconBg: "bg-destructive/10", iconText: "text-destructive", heading: "text-destructive" },
+  };
+
+  // Parse "Level I (Normal)" / "Level II (Waspada)" dst. menjadi level badge.
+  let kelud = $derived.by(() => {
+    const raw = keludStatus?.status;
+    if (!raw) {
+      return {
+        level: "normal" as KeludLevel,
+        label: i18n.t('status.monitoring'),
+        textKey: "status.nodata",
+        theme: statusTheme.normal,
+      };
+    }
+    const m = raw.match(/Level\s+(I|II|III|IV)\s*\(([^)]*)\)/i);
+    let level: KeludLevel = "normal";
+    let name = raw;
+    if (m) {
+      name = m[2].trim();
+      switch (m[1].toUpperCase()) {
+        case "II":  level = "waspada"; break;
+        case "III": level = "siaga";   break;
+        case "IV":  level = "awas";    break;
+      }
+    }
+    return { level, label: name.toUpperCase(), textKey: KELUD_TEXT_KEY[level], theme: statusTheme[level] };
+  });
+
   onMount(async () => {
+    // 0. Fetch Status Gunung Kelud (kartu status utama)
+    try {
+      const res = await fetch("/api/kelud/status");
+      const data = await res.json();
+      if (data.status === "success" && data.data) {
+        keludStatus = data.data;
+      }
+    } catch (e) {
+      console.error("Gagal menarik status Kelud:", e);
+    } finally {
+      isLoadingStatus = false;
+    }
+
     // 1. Fetch Potensi Data untuk Map
     try {
       const res = await fetch("/api/potensi");
@@ -69,21 +120,11 @@
       console.error("Gagal menarik data potensi:", e);
     }
 
-    // 2. Fetch News Data untuk Card Status & List Berita
+    // 2. Fetch News Data untuk List Berita
     try {
       const res = await fetch("/api/news");
       const data = await res.json();
-      if (data.status === "success" && data.data && data.data.length > 0) {
-        // Ambil berita pertama untuk Status Card utama
-        const topNews = data.data[0];
-        alertData = {
-          sumber: topNews.source,
-          pesan: topNews.summary,
-          waktu: formatNewsDate(topNews.created_at) ?? i18n.t('info.date.now'),
-          kategori: categoryToSlug[topNews.category] || topNews.category,
-          judul: topNews.title
-        };
-
+      if (data.status === "success" && data.data) {
         // Simpan 3 berita terbaru untuk bottom section
         newsItems = data.data.slice(0, 3).map((n: any) => {
           const catSlug = categoryToSlug[n.category] || "volcano";
@@ -100,7 +141,7 @@
         });
       }
     } catch (e) {
-      console.error("Gagal menarik data berita AI:", e);
+      console.error("Gagal menarik data berita:", e);
     } finally {
       isLoadingAlert = false;
     }
@@ -170,45 +211,49 @@
 
   <!-- Status card -->
   <section class="mx-auto max-w-360 px-4 lg:px-8 mt-10">
-    <div class="flex flex-col p-6 lg:p-7 rounded-2xl bg-card border border-warning/30 shadow-md">
+    <div class="flex flex-col p-6 lg:p-7 rounded-2xl bg-card {kelud.theme.border} shadow-md">
       <!-- Baris 1: Icon -->
       <div class="mb-4">
-        <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-warning/20">
-          <Activity class="w-6 h-6 text-warning" />
+        <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl {kelud.theme.iconBg}">
+          <Activity class="w-6 h-6 {kelud.theme.iconText}" />
         </span>
       </div>
-      
+
       <!-- Baris 2: Judul Section -->
-      <p class="text-[0.875rem] font-bold uppercase tracking-wider text-warning mb-3">
+      <p class="text-[0.875rem] font-bold uppercase tracking-wider {kelud.theme.heading} mb-3">
         {i18n.t('status.title')}
       </p>
 
-      <!-- Baris 3: Label Waspada -->
+      <!-- Baris 3: Badge Status Aktual -->
       <div class="mb-4">
-        <StatusBadge
-          level="waspada"
-          label={alertData.kategori === 'warning' || alertData.kategori === 'volcano' ? "WARNING" : "INFO"}
-          size="lg"
-          pulse={true}
-        />
+        {#if isLoadingStatus}
+          <span class="inline-flex items-center gap-2 text-[0.8125rem] text-muted-foreground">
+            <span class="inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+            Memuat status...
+          </span>
+        {:else}
+          <StatusBadge
+            level={kelud.level}
+            label={kelud.label}
+            size="lg"
+            pulse={kelud.level !== "normal"}
+          />
+        {/if}
       </div>
 
-      <!-- Baris 4: Isi Berita AI -->
-      <p class="text-[1rem] leading-relaxed text-foreground font-medium mb-6 whitespace-pre-wrap">
-        {#if isLoadingAlert}
-          <span class="inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2 align-middle"></span> Memuat analisis AI...
-        {:else}
-          {alertData.pesan}
-        {/if}
+      <!-- Baris 4: Deskripsi Kondisi -->
+      <p class="text-[1rem] leading-relaxed text-foreground font-medium mb-6">
+        {i18n.t(kelud.textKey as any)}
       </p>
 
       <!-- Baris 5 & 6: Footer Info (Waktu & Sumber) -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-5 border-t border-border">
         <p class="text-[0.8125rem] text-muted-foreground">
-          <span class="font-semibold text-foreground">{i18n.t('status.updated')}</span> {alertData.waktu}
+          <span class="font-semibold text-foreground">{i18n.t('status.updated')}</span>
+          {keludStatus ? (formatNewsDate(keludStatus.updated_at) ?? i18n.t('info.date.now')) : i18n.t('info.date.now')}
         </p>
         <p class="text-[0.8125rem] text-muted-foreground">
-          <span class="font-semibold text-foreground">{i18n.t('status.source')}</span> {alertData.sumber}
+          <span class="font-semibold text-foreground">{i18n.t('status.source')}</span> {i18n.t('status.sourceVal')}
         </p>
       </div>
     </div>
@@ -277,12 +322,12 @@
         <!-- Fallback jika belum ada data AI -->
         <InfoCard
           category="volcano"
-          title="Sistem Siaga"
-          summary="Belum ada peringatan darurat saat ini."
+          title="Sistem Memantau"
+          summary={i18n.t('status.nodata')}
           date="Baru Saja"
           source="Sistem LOKARI"
-          icon={Mountain}
-          accent="bg-warning/10 text-warning"
+          icon={Activity}
+          accent="bg-safe/10 text-safe"
           href="/news"
         />
       {/if}

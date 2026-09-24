@@ -53,6 +53,10 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 	// News Routes
 	api.Get("/news", newsHandler.GetNews)
 
+	// Status Gunung Kelud (dari monitor_state — sumber kebenaran kartu status)
+	statusHandler := handlers.NewStatusHandler(db)
+	api.Get("/kelud/status", statusHandler.GetKeludStatus)
+
 	// Push Notification Routes
 	api.Post("/subscribe", pushHandler.Subscribe)
 }
