@@ -29,3 +29,10 @@ services:
       - /app/node_modules
     networks:
       - lokari-network
+
+  db:
+    # Publikasi port DB HANYA untuk development lokal (via override ini).
+    # Di compose produksi (docker-compose.yaml) port DB sengaja tidak dibuka ke
+    # host — akses hanya lewat jaringan internal "lokari-network".
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
