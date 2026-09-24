@@ -96,5 +96,20 @@ CREATE TABLE IF NOT EXISTS log_update (
 	if err != nil {
 		log.Fatalf("Error creating tables: %v\n", err)
 	}
+
+	log.Println("Creating indexes (GiST geometric, HNSW embedding)...")
+
+	// Index spasial PostGIS untuk pencarian berbasis jarak/dekat
+	idxGeom := `CREATE INDEX IF NOT EXISTS idx_potensi_geom ON potensi_bencana USING GiST (geometri);`
+	if _, err := pool.Exec(ctx, idxGeom); err != nil {
+		log.Fatalf("Gagal membuat index GiST: %v\n", err)
+	}
+
+	// Index vektor HNSW untuk semantic search (cosine)
+	idxEmbed := `CREATE INDEX IF NOT EXISTS idx_potensi_embed ON potensi_bencana USING hnsw (embedding vector_cosine_ops);`
+	if _, err := pool.Exec(ctx, idxEmbed); err != nil {
+		log.Fatalf("Gagal membuat index HNSW: %v\n", err)
+	}
+
 	log.Println("Database schema migrated successfully.")
 }
