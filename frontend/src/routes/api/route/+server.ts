@@ -9,10 +9,26 @@ export async function GET({ url, fetch }) {
     return json({ error: "Missing start or end coordinates" }, { status: 400 });
   }
 
-  const sLng = parseFloat(start.split(',')[0]);
-  const sLat = parseFloat(start.split(',')[1]);
-  const eLng = parseFloat(end.split(',')[0]);
-  const eLat = parseFloat(end.split(',')[1]);
+  // Validasi ketat: 4 nilai harus finite & dalam rentang geografis.
+  // Number (bukan parseFloat) menolak input seperti "12.3abc".
+  const [sLngRaw, sLatRaw] = start.split(',');
+  const [eLngRaw, eLatRaw] = end.split(',');
+  const sLng = Number(sLngRaw);
+  const sLat = Number(sLatRaw);
+  const eLng = Number(eLngRaw);
+  const eLat = Number(eLatRaw);
+
+  const invalid =
+    ![sLng, sLat, eLng, eLat].every(Number.isFinite) ||
+    Math.abs(sLng) > 180 || Math.abs(eLng) > 180 ||
+    Math.abs(sLat) > 90 || Math.abs(eLat) > 90;
+
+  if (invalid) {
+    return json(
+      { error: "Invalid coordinates: expected start=lng,lat&end=lng,lat" },
+      { status: 400 }
+    );
+  }
 
   // Poligon Kawasan Rawan Bencana (KRB III) & Jalur Lahar Utama (Source: BMKG & NASA)
   const hazardPolygon = [
@@ -32,6 +48,10 @@ export async function GET({ url, fetch }) {
   const orsApiKey = env.ORS_API_KEY ?? '';
 
   try {
+    if (!orsApiKey) {
+      throw new Error("ORS_API_KEY tidak diset — langsung pakai fallback OSRM");
+    }
+
     const orsUrl = `https://api.openrouteservice.org/v2/directions/driving-car/geojson`;
     const body = {
       coordinates: [[sLng, sLat], [eLng, eLat]],
@@ -78,7 +98,7 @@ export async function GET({ url, fetch }) {
 
   // Strategi 2: Fallback ke OSRM standar jika titik awal/akhir terperangkap di dalam poligon
   try {
-    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${start};${end}?overview=full&geometries=geojson&alternatives=false`;
+    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${sLng},${sLat};${eLng},${eLat}?overview=full&geometries=geojson&alternatives=false`;
     const res = await fetch(osrmUrl, {
       headers: { 'User-Agent': 'LOKARI-Disaster-Evacuation-App/1.0' }
     });

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { cn } from "$lib/utils";
+  import { getGeoCoordinates } from "$lib/geo";
   import desaJarakGeoJSON from "$lib/data/desa_jarak.json";
 
   let {
@@ -294,13 +295,13 @@
         // Cek toggle yang aktif
         if ((wantHealth && isFaskes) || (wantShelters && !isFaskes)) {
           let lat, lng;
-          if (typeof p.geometri === 'string') {
-            const geo = JSON.parse(p.geometri);
-            lng = geo.coordinates[0];
-            lat = geo.coordinates[1];
-          } else if (p.lat && p.lng) {
+          if (typeof p.lat === "number" && typeof p.lng === "number") {
             lat = p.lat;
             lng = p.lng;
+          } else {
+            const [gLng, gLat] = getGeoCoordinates(p.geometri);
+            lat = gLat;
+            lng = gLng;
           }
 
           if (lat && lng) {
@@ -326,6 +327,9 @@
       } else {
         originMarker = L.marker([oLat, oLng], { icon: createOriginIcon() }).addTo(map);
       }
+    } else if (originMarker) {
+      map.removeLayer(originMarker);
+      originMarker = null;
     }
 
     // --- Destination Marker ---
@@ -333,15 +337,7 @@
       const handleDestClick = () => {
         if (onMarkerClick && pd) {
           const matched = pd.find((p: any) => {
-            let pLat, pLng;
-            if (typeof p.geometri === 'string') {
-              const geo = JSON.parse(p.geometri);
-              pLng = geo.coordinates[0];
-              pLat = geo.coordinates[1];
-            } else if (p.lat && p.lng) {
-              pLat = p.lat;
-              pLng = p.lng;
-            }
+            const [pLng, pLat] = getGeoCoordinates(p.geometri);
             return Math.abs(pLat - dLat) < 0.0001 && Math.abs(pLng - dLng) < 0.0001;
           });
           if (matched) onMarkerClick(matched);
@@ -357,12 +353,16 @@
         destMarker = L.marker([dLat, dLng], { icon: createDestIcon(dKat) }).addTo(map);
         destMarker.on('click', handleDestClick);
       }
+    } else if (destMarker) {
+      map.removeLayer(destMarker);
+      destMarker = null;
     }
 
     // --- Route Line ---
     if (wantRoute && dLat !== 0 && dLng !== 0) {
       if (routeLayer) {
         map.removeLayer(routeLayer);
+        routeLayer = null;
       }
       if (rCoords && rCoords.length > 0) {
         routeLayer = L.polyline(rCoords, {
@@ -375,6 +375,9 @@
         
         map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
       }
+    } else if (routeLayer) {
+      map.removeLayer(routeLayer);
+      routeLayer = null;
     }
   });
 

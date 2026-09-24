@@ -16,22 +16,20 @@
   - **Masalah:** `categoryToSlug` hanya memetakan label Indonesia (`"Gunung Api"`, `"Lahar"`, dst.), sementara DB `kabar_kelud.kategori` berisi slug *lowercase English* hasil AI (`volcano`, `lahar`, `evac`, `weather`, `warning`). Karena `categoryToSlug[n.category]` selalu `undefined`, fallback `"volcano"` dipakai untuk SEMUA berita → ikon & filter di halaman News dan beranda salah total; filter "Lahar/Evakuasi/Cuaca/Peringatan" selalu kosong.
   - **Perbaikan:** `categoryToSlug` harus memetakan kedua bentuk (slug EN + label ID), atau backend mengembalikan slug EN langsung. ✅
 
-- [ ] **1.2 Crash `JSON.parse` pada marker di halaman `/safe-routes`**
+- [x] **1.2 Crash `JSON.parse` pada marker di halaman `/safe-routes`**
   - **File:** `frontend/src/routes/safe-routes/+page.svelte:50-71` (crash di baris 58 & 63); data di-parse di `:123-129`
   - **Masalah:** `fetchShelters()` sudah mengubah `geometri` menjadi *object* (via `JSON.parse`), lalu `onMarkerClick` memanggil `JSON.parse(potensi.geometri)` lagi — `JSON.parse(object)` melempar `SyntaxError`. Popup tetap terbuka tapi rekomendasi faskes tidak pernah muncul + error di console. (`/danger-map` aman karena geometrinya masih string.)
-  - **Perbaikan:** Buat satu helper `getGeoCoordinates(obj)` yang toleran terhadap string/object, pakai di semua halaman.
-  - **Status (WIP):** Helper `getGeoCoordinates` sudah dibuat & dipakai di `safe-routes/+page.svelte`, tapi belum dipakai di semua halaman — `danger-map/+page.svelte` dan `KeludMapView.svelte` masih `JSON.parse` mentah tanpa try/catch.
+  - **Perbaikan:** Satu helper `getGeoCoordinates(obj)` yang toleran terhadap string/object di `$lib/geo.ts` — dipakai di `safe-routes`, `danger-map`, dan `KeludMapView` (tidak ada lagi `JSON.parse` mentah tanpa try/catch). ✅
 
 - [x] **1.3 Rute `/api/route` mati di dev; seluruh `/api/*` mati di produksi**
   - **File:** `frontend/vite.config.ts:14-19`, `frontend/src/routes/api/route/+server.ts`, `frontend/svelte.config.js:1,9`
   - **Masalah:** Di dev, proxy Vite menangkap SEMUA `/api` → backend Fiber, termasuk `/api/route` yang harus di-handle endpoint SvelteKit → 404 → rute jatuh diam-diam ke garis lurus. Di produksi (`adapter-auto`), tidak ada proxy dan `/api/potensi`, `/api/news`, `/api/search` tidak punya endpoint SvelteKit → semua 404. Aplikasi hanya berfungsi di setup Docker dev-mode.
   - **Perbaikan:** Pilih satu arsitektur — (a) semua `/api` dari backend + hilangkan endpoint SvelteKit `/api/route` (taruh routing di backend), atau (b) pasang `adapter-node` + reverse proxy Nginx `/api` → backend untuk produksi. ✅
 
-- [ ] **1.4 Klaim "Aman digunakan" selalu hijau walau rute tidak aman**
+- [x] **1.4 Klaim "Aman digunakan" selalu hijau walau rute tidak aman**
   - **File:** `frontend/src/routes/safe-routes/+page.svelte:545-550` (UI), `frontend/src/routes/api/route/+server.ts:63,82` (flag `isSafe`), `frontend/src/lib/components/KeludMapView.svelte:100-118` (`fetchRealRoute` mengabaikan `isSafe`)
   - **Masalah:** UI selalu menampilkan `CheckCircle2` + "Aman digunakan" meskipun server mengembalikan rute fallback OSRM dengan `isSafe: false`. ETA (`dist/15 km/h`) dan "Rute Alternatif" (`distanceKm * 1.5`, baris 591/595) adalah angka karangan, bukan dari routing engine. Untuk aplikasi penyelamatan, ini menyesatkan dan berbahaya.
-  - **Perbaikan:** Teruskan flag `isSafe` ke UI, tampilkan peringatan bila `false`/fallback, hapus metrik buatan. Validasi numerik input rute (`isNaN`/`isFinite`) di `api/route/+server.ts:11-14`.
-  - **Status (WIP):** UI sudah menampilkan 3 state (aman / fallback / bahaya) berdasarkan flag `isSafe`+`status` dari server, dan `KeludMapView.svelte` tidak lagi punya `fetchRealRoute`. Yang belum: validasi `isNaN`/`isFinite` pada input koordinat di `api/route/+server.ts`, serta ETA fallback ("Rute Alternatif", `distanceKm*1.5`) masih angka karangan.
+  - **Perbaikan:** UI menampilkan 3 state (aman / fallback / bahaya) dari `isSafe`+`status` server; metrik buatan dihapus — ETA tampil "—" bila routing engine tidak memberi data, seksi "Rute Alternatif" tidak lagi memakai `×1.5`; input koordinat divalidasi `Number.isFinite` (400 bila invalid) di `api/route/+server.ts`. ✅
 
 - [x] **1.5 Hasil semantic search diam-diam berkurang (NULL di-skip)**
   - **File:** `backend/internal/api/handlers/ai_handler.go:110-114`
@@ -146,30 +144,30 @@
 
 ## 5. 🟠 SEDANG — Frontend
 
-- [ ] **5.1 `KeludMapView.svelte` — layer tidak dibersihkan & refetch berulang**
+- [x] **5.1 `KeludMapView.svelte` — layer tidak dibersihkan & refetch berulang**
   - **File:** `frontend/src/lib/components/KeludMapView.svelte:196-398`
   - **Masalah:** (a) `routeLayer` & `originMarker` tidak pernah dihapus saat toggle mati → layer menumpuk; (b) rute di-*refetch* setiap `$effect` berjalan; (c) koordinat awal/akhir diduplikasi di polyline (server sudah mengembalikan endpoint).
-  - **Perbaikan:** Tambah cabang `else` yang menghapus layer; cache hasil fetch per pasangan koordinat; buang titik duplikat.
+  - **Perbaikan:** Cabang `else` menghapus `routeLayer`/`originMarker`/`destMarker` saat nonaktif; hasil fetch rute di-cache per pasangan koordinat (`routeCache` di `safe-routes`); polyline dedup + clamp agar endpoint tidak duplikat. ✅
 
 - [ ] **5.2 Tile Google Satellite tanpa API key**
   - **File:** `frontend/src/lib/components/KeludMapView.svelte:73-76`
   - **Masalah:** `mt1.google.com` dipakai tanpa key → melanggar ToS Google & rawan diblokir/berhenti bekerja.
   - **Perbaikan:** Ganti ke layanan tile berlisensi (MapTiler/OSM/HERE) dengan key via env.
 
-- [ ] **5.3 Filter blocklist/allowlist query false-positive & hanya di client**
+- [x] **5.3 Filter blocklist/allowlist query false-positive & hanya di client**
   - **File:** `frontend/src/routes/search/+page.svelte:14-23`, `frontend/src/routes/safe-routes/+page.svelte:175-181` (regex di-duplikasi di 2 file)
   - **Masalah:** Query sah seperti "...kurang jauh" kena blocklist (`tambah|kurang|dibagi|dikali`) → muncul pesan "Anomali" yang membingungkan warga. Regulasi ini juga mudah dilewati (client-side).
-  - **Perbaikan:** Satu modul bersama, evaluasi ulang kata-kata, dan pindahkan validasi sebenarnya ke backend.
+  - **Perbaikan:** Regex disatukan di `$lib/queryGuard.ts` (dipakai `search` & `safe-routes`); kata false-positive (`tambah|kurang|dibagi|dikali|usia|umur|jomblo`) dievaluasi & dihapus; validasi sebenarnya sudah di backend (rate limit + validasi query server-side). ✅
 
 - [x] **5.4 Build produksi tidak berfungsi: `adapter-auto` tanpa platform adapter**
   - **File:** `frontend/svelte.config.js:9`, `frontend/package.json` (`build` script)
   - **Masalah:** Tidak ada adapter (node/vercel/netlify) di dependencies → `npm run build` gagal kecuali terdeteksi platform serveless saat build.
   - **Perbaikan:** Tambah `@sveltejs/adapter-node` (bila deploy VM/Docker) atau adapter platform yang dituju. ✅ (sudah pakai `@sveltejs/adapter-vercel` dengan runtime nodejs22.x — cocok untuk deploy Vercel; ganti `adapter-node` bila target deploy VM/Docker)
 
-- [ ] **5.5 Input koordinat rute tidak divalidasi**
+- [x] **5.5 Input koordinat rute tidak divalidasi**
   - **File:** `frontend/src/routes/api/route/+server.ts:11-17`
   - **Masalah:** `split(',')` tanpa cek jumlah elemen; `parseFloat` bisa menghasilkan `NaN` yang diteruskan ke ORS/OSRM.
-  - **Perbaikan:** Validasi `Number.isFinite` untuk 4 nilai; balas 400 bila invalid.
+  - **Perbaikan:** `Number.isFinite` untuk 4 nilai + rentang lat/lng (`±180`/`±90`); balas 400 bila invalid; URL OSRM dibangun dari nilai tervalidasi, bukan string mentah. ✅
 
 ## 6. 🟡 RENDAH — Best Practice & Kebersihan
 
