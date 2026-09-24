@@ -1,2 +1,11 @@
-FROM postgis/postgis:16-3.4
-RUN apt-get update && apt-get install -y postgresql-16-pgvector && rm -rf /var/lib/apt/lists/*
+# PostgreSQL 16 + PostGIS 3.4 + pgvector sekaligus.
+#
+# Sebelumnya memakai postgis/postgis + apt-get postgresql-16-pgvector, tapi
+# paket pgvector TIDAK tersedia di repo Debian bookworm sehingga build bisa
+# gagal. pgvector/pgvector sudah memuat ekstensi pgvector untuk PG16,
+# lalu PostGIS dipasang dari paket resmi Debian bookworm.
+FROM pgvector/pgvector:pg16
+RUN apt-get update && apt-get install -y \
+    postgresql-16-postgis-3 \
+    postgresql-16-postgis-3-scripts \
+    && rm -rf /var/lib/apt/lists/*
