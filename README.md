@@ -70,6 +70,12 @@ Jika kamu menjalankan proyek ini di laptop baru, *database* PostgreSQL di Docker
    ```
 Tunggu hingga proses ekstraksi AI selesai 100%!
 
+> **Reset database (opsional):** untuk menghapus seluruh data lalu membangun ulang skema dan data dari nol, jalankan:
+> ```bash
+> docker compose exec backend go run scripts/reset.go
+> ```
+> Skrip ini **meminta konfirmasi `y/N`** sebelum menghapus apa pun, lalu menjalankan migrasi (`migrate.go` + `migrate_news.go`) dan menawarkan seed ulang.
+
 ---
 
 ## Menjalankan Projek Secara Manual (Tanpa Docker Penuh)
