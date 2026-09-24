@@ -196,7 +196,8 @@ func (s *FetcherService) broadcastPush(title, summary, category string) {
 			Subscriber:      "mailto:admin@lokari.my.id",
 			VAPIDPublicKey:  vapidPublic,
 			VAPIDPrivateKey: vapidPrivate,
-			TTL:             3600, // Aktif selama 1 jam
+			Urgency:         webpush.UrgencyHigh, // Info penting — jangan ditunda push service
+			TTL:             3600,                // Aktif selama 1 jam
 		})
 		switch {
 		case err != nil:
