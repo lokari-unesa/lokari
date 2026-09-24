@@ -27,14 +27,17 @@ func main() {
 	defer pool.Close()
 
 	log.Println("Menghapus data ganda (duplicates) di tabel potensi_bencana...")
-	
-	// Query to keep only the earliest inserted row for each nama_objek
+
+	// Sisakan baris PALING AWAL (created_at terendah, lalu id_potensi terkecil
+	// sebagai tie-breaker) untuk tiap nama_objek — bukan id_potensi::text acak.
 	query := `
 		DELETE FROM potensi_bencana
 		WHERE id_potensi NOT IN (
-			SELECT MIN(id_potensi::text)::uuid
-			FROM potensi_bencana
-			GROUP BY nama_objek
+			SELECT id_potensi FROM (
+				SELECT id_potensi,
+					ROW_NUMBER() OVER (PARTITION BY nama_objek ORDER BY created_at, id_potensi) AS rn
+				FROM potensi_bencana
+			) t WHERE rn = 1
 		);
 	`
 	tag, err := pool.Exec(ctx, query)
