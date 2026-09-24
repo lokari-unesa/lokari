@@ -105,31 +105,30 @@ func (s *FetcherService) FetchNASAData() {
 			log.Printf("[Zero-Admin] NASA EONET JSON Parse Error: %v\n", err)
 			status = "Gagal"
 		} else {
-			log.Println("[Zero-Admin] Berhasil menarik data JSON Vulkanik dari NASA EONET. Meringkas dengan AI...")
+			log.Println("[Zero-Admin] Berhasil menarik data JSON Vulkanik dari NASA EONET.")
 
-			// Ambil 5 event pertama saja agar AI tidak kelebihan context limit
-			var shortData interface{} = data
-			if events, ok := data["events"].([]interface{}); ok {
-				if len(events) > 5 {
-					shortData = map[string]interface{}{"events": events[:5]}
-				}
-			}
-			rawDataBytes, _ := json.Marshal(shortData)
-
-			news, err := ai.GenerateNewsSummary(context.Background(), string(rawDataBytes), "NASA EONET (Earth Observatory Natural Event Tracker)")
-
+			// Hanya proses event yang berada dalam radius 150 km dari Gunung
+			// Kelud — event global yang jauh tidak relevan untuk warga Kediri.
+			shortData, err := eonetNearKeludData(data)
 			if err != nil {
-				log.Printf("[Zero-Admin] Gagal meringkas berita NASA: %v\n", err)
-			} else if s.DB != nil {
-				// Simpan hasil ringkasan ke database
-				query := `INSERT INTO kabar_kelud (kategori, judul, ringkasan, sumber) VALUES ($1, $2, $3, $4) ON CONFLICT (sumber, judul) DO NOTHING`
-				_, err = s.DB.Exec(context.Background(), query, news.Category, news.Title, news.Summary, "NASA EONET")
+				log.Printf("[Zero-Admin] NASA EONET: %v\n", err)
+			} else {
+				rawDataBytes, _ := json.Marshal(shortData)
+
+				news, err := ai.GenerateNewsSummary(context.Background(), string(rawDataBytes), "NASA EONET (Earth Observatory Natural Event Tracker)")
 				if err != nil {
-					log.Printf("[Zero-Admin] Gagal menyimpan berita NASA ke DB: %v\n", err)
-				} else {
-					log.Println("[Zero-Admin] Berita NASA berhasil disimpan ke Database.")
-					if news.Category == "warning" || news.Category == "volcano" || news.Category == "evac" {
-						go s.broadcastPush(news.Title, news.Summary, news.Category)
+					log.Printf("[Zero-Admin] Gagal meringkas berita NASA: %v\n", err)
+				} else if s.DB != nil {
+					// Simpan hasil ringkasan ke database
+					query := `INSERT INTO kabar_kelud (kategori, judul, ringkasan, sumber) VALUES ($1, $2, $3, $4) ON CONFLICT (sumber, judul) DO NOTHING`
+					_, err = s.DB.Exec(context.Background(), query, news.Category, news.Title, news.Summary, "NASA EONET")
+					if err != nil {
+						log.Printf("[Zero-Admin] Gagal menyimpan berita NASA ke DB: %v\n", err)
+					} else {
+						log.Println("[Zero-Admin] Berita NASA berhasil disimpan ke Database.")
+						if news.Category == "warning" || news.Category == "volcano" || news.Category == "evac" {
+							go s.broadcastPush(news.Title, news.Summary, news.Category)
+						}
 					}
 				}
 			}
