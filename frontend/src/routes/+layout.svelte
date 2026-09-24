@@ -7,23 +7,27 @@
 
 	let { children } = $props();
 
+	// Cegah penumpukan listener fallback bila subscribeToPush dipanggil berulang
+	// saat masih gagal (mis. hot-reload saat halaman terbuka).
+	let pushRetryArmed = false;
+
 	onMount(async () => {
 		if ('serviceWorker' in navigator && 'PushManager' in window) {
 			try {
 				await navigator.serviceWorker.register('/sw.js');
 				// Tunggu SW aktif dulu — hindari AbortError saat kunjungan pertama
 				const registration = await navigator.serviceWorker.ready;
-				
+
 				if (Notification.permission === 'default') {
 					// Memicu native pop-up seperti kompas.com setelah 2 detik
 					setTimeout(async () => {
 						const permission = await Notification.requestPermission();
 						if (permission === 'granted') {
-							subscribeToPush(registration);
+							await subscribeToPush(registration);
 						}
-					}, 2000); 
+					}, 2000);
 				} else if (Notification.permission === 'granted') {
-					subscribeToPush(registration);
+					await subscribeToPush(registration);
 				}
 			} catch(e) {
 				console.error("SW / Push Error:", e);
@@ -31,6 +35,10 @@
 		}
 	});
 
+	// Dipanggil ketika permission sudah "granted". Percobaan pertama `subscribe`
+	// bisa gagal sementara tepat setelah user menekan Izinkan (AbortError "push
+	// service error") — makanya di-retry dengan backoff, plus fallback otomatis
+	// saat tab difokus agar tidak perlu reload manual.
 	async function subscribeToPush(registration: ServiceWorkerRegistration) {
 		try {
 			const vapidKey = env.PUBLIC_VAPID_KEY;
@@ -50,21 +58,45 @@
 				return outputArray;
 			};
 
-			// Pakai subscription browser yang sudah ada kalau sudah dibuat;
-			// kalau belum, buat baru. Keduanya tetap di-sync ke backend di bawah.
-			let subscription = await registration.pushManager.getSubscription();
+			// Pakai subscription browser yang sudah ada; kalau belum, buat baru
+			// dengan retry untuk error transien.
+			let subscription: PushSubscription | null = await registration.pushManager.getSubscription();
 			if (!subscription) {
-				subscription = await registration.pushManager.subscribe({
-					userVisibleOnly: true,
-					applicationServerKey: urlB64ToUint8Array(vapidKey)
-				});
+				const MAX_ATTEMPTS = 3;
+				for (let attempt = 1; attempt <= MAX_ATTEMPTS && !subscription; attempt++) {
+					try {
+						subscription = await registration.pushManager.subscribe({
+							userVisibleOnly: true,
+							applicationServerKey: urlB64ToUint8Array(vapidKey)
+						});
+					} catch (e) {
+						console.warn(`[Push] subscribe percobaan ${attempt}/${MAX_ATTEMPTS} gagal:`, e);
+						if (attempt < MAX_ATTEMPTS) {
+							// Backoff 1.2s → 2.4s — beri waktu push service browser selesai.
+							await new Promise((r) => setTimeout(r, 1200 * attempt));
+						}
+					}
+				}
+			}
+
+			if (!subscription) {
+				console.error("[Push] Gagal subscribe setelah beberapa percobaan — mencoba lagi saat tab difokus.");
+				if (!pushRetryArmed) {
+					pushRetryArmed = true;
+					const retry = async () => {
+						pushRetryArmed = false;
+						window.removeEventListener('focus', retry);
+						await subscribeToPush(registration);
+					};
+					window.addEventListener('focus', retry);
+				}
+				return;
 			}
 
 			const subJSON = subscription.toJSON();
 			// Relatif /api/* agar konsisten dengan halaman lain:
 			//   - dev manual   → vite proxy (vite.config.ts)
 			//   - build/prod   → hooks.server.ts (BACKEND_URL)
-			// Hardcoded localhost:5181 hanya jalan dari mesin dev sendiri.
 			await fetch('/api/subscribe', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
