@@ -76,6 +76,12 @@ Tunggu hingga proses ekstraksi AI selesai 100%!
 > ```
 > Skrip ini **meminta konfirmasi `y/N`** sebelum menghapus apa pun, lalu menjalankan migrasi (`migrate.go` + `migrate_news.go`) dan menawarkan seed ulang.
 
+> **Backfill embedding (opsional):** jika ada baris lama yang belum punya vektor (mis. hasil seed sebelum fitur AI embedding ada), lengkapi dengan:
+> ```bash
+> docker compose exec backend go run scripts/backfill_embedding.go
+> ```
+> Skrip ini hanya memproses baris dengan `embedding IS NULL` (idempotent).
+
 ---
 
 ## Menjalankan Projek Secara Manual (Tanpa Docker Penuh)
