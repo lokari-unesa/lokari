@@ -20,6 +20,7 @@
   import InfoCard from "$lib/components/InfoCard.svelte";
   import { i18n } from "$lib/i18n.svelte";
   import { cn } from "$lib/utils";
+  import { formatNewsDate } from "$lib/date";
 
   let alertData = $state({
     sumber: "Sistem Lokal",
@@ -78,7 +79,7 @@
         alertData = {
           sumber: topNews.source,
           pesan: topNews.summary,
-          waktu: topNews.created_at || i18n.t('info.date.now'),
+          waktu: formatNewsDate(topNews.created_at) ?? i18n.t('info.date.now'),
           kategori: categoryToSlug[topNews.category] || topNews.category,
           judul: topNews.title
         };
@@ -91,7 +92,7 @@
             category: catSlug,
             title: n.title,
             summary: n.summary,
-            date: n.created_at || i18n.t('info.date.now'),
+            date: formatNewsDate(n.created_at) ?? i18n.t('info.date.now'),
             source: n.source,
             icon: meta.icon,
             accent: meta.accent
