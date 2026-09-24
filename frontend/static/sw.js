@@ -1,3 +1,12 @@
+// SW baru langsung aktif tanpa menunggu reload/tutup tab
+self.addEventListener('install', function() {
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', function(event) {
+    event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('push', function(event) {
     if (event.data) {
         try {
@@ -5,8 +14,8 @@ self.addEventListener('push', function(event) {
             
             const options = {
                 body: payload.body || 'Tidak ada deskripsi.',
-                icon: '/icons/lokari-logo.png', // Fallback icon
-                badge: '/icons/lokari-badge.png',
+                icon: '/logo.webp',
+                badge: '/favicon.webp',
                 vibrate: [200, 100, 200, 100, 200, 100, 200], // SOS vibration
                 requireInteraction: true,
                 data: {
