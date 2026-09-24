@@ -123,7 +123,7 @@
         <h2 class="font-display font-bold text-[1.25rem] text-foreground">{i18n.t('page.about.partners')}</h2>
       </div>
       <p class="text-[0.9375rem] text-muted-foreground mb-4">{i18n.t('page.about.partners.desc')}</p>
-      <div class="flex flex-col gap-3 mt-auto">
+      <div class="flex flex-col gap-3">
         <a href="https://sagasitas.org/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors">
           <img src="/assets/sagasitas.webp" alt="Sagasitas Indonesia" class="w-12 h-12 object-contain rounded-md" />
           <span class="font-medium text-[0.9375rem] text-foreground">Yayasan Sagasitas Indonesia</span>
@@ -141,12 +141,12 @@
         <h2 class="font-display font-bold text-[1.25rem] text-foreground">{i18n.t('page.about.sources')}</h2>
       </div>
       <p class="text-[0.9375rem] text-muted-foreground mb-4">{i18n.t('page.about.sources.desc')}</p>
-      <div class="flex flex-col gap-3 mt-auto">
-        <a href="https://eonet.gsfc.nasa.gov/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-destructive/40 transition-colors">
+      <div class="flex flex-col gap-3">
+        <a href="https://magma.esdm.go.id/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-destructive/40 transition-colors">
           <ShieldCheck class="w-5 h-5 text-destructive shrink-0" />
           <div class="flex flex-col">
-            <span class="font-medium text-[0.9375rem] text-foreground">NASA EONET</span>
-            <span class="text-[0.8125rem] text-muted-foreground">Earth Observatory Natural Event Tracker (Satelit Global)</span>
+            <span class="font-medium text-[0.9375rem] text-foreground">PVMBG MAGMA</span>
+            <span class="text-[0.8125rem] text-muted-foreground">Pusat Vulkanologi dan Mitigasi Bencana Geologi (ESDM)</span>
           </div>
         </a>
         <a href="https://www.bmkg.go.id/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-destructive/40 transition-colors">
@@ -154,6 +154,13 @@
           <div class="flex flex-col">
             <span class="font-medium text-[0.9375rem] text-foreground">BMKG</span>
             <span class="text-[0.8125rem] text-muted-foreground">Badan Meteorologi, Klimatologi, dan Geofisika</span>
+          </div>
+        </a>
+        <a href="https://eonet.gsfc.nasa.gov/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-destructive/40 transition-colors">
+          <ShieldCheck class="w-5 h-5 text-destructive shrink-0" />
+          <div class="flex flex-col">
+            <span class="font-medium text-[0.9375rem] text-foreground">NASA EONET</span>
+            <span class="text-[0.8125rem] text-muted-foreground">Earth Observatory Natural Event Tracker (Satelit Global)</span>
           </div>
         </a>
       </div>
