@@ -18,12 +18,13 @@ services:
     depends_on:
       - db
     env_file:
-      - ./backend/.env
+      - path: ./backend/.env
+        required: false
     environment:
       # Di dalam docker, DB diakses via service "db" pada port 5432 (port listen
       # PostgreSQL di dalam container SELALU 5432; POSTGRES_PORT hanya port publish host,
       # jangan dipakai di sini).
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@db:5432/${POSTGRES_DB:-lokari_db}?sslmode=disable
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-lokari_pg_dev_local}@db:5432/${POSTGRES_DB:-lokari_db}?sslmode=disable
     networks:
       - lokari-network
 
@@ -34,10 +35,11 @@ services:
       dockerfile: Dockerfile-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+      # Default di bawah HANYA untuk dev lokal. Di compose produksi ini port DB
+      # sudah tidak di-expose ke host, tapi untuk deploy sungguhan WAJIB set
+      # POSTGRES_PASSWORD dengan nilai kuat (mis. lewat `.env` root proyek).
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lokari_pg_dev_local}
       POSTGRES_DB: ${POSTGRES_DB:-lokari_db}
-    ports:
-      - "${POSTGRES_PORT:-5433}:5432" # host:container — container tetap 5432; host 5433 agar konsisten dengan backend/.env (go run manual)
     volumes:
       - lokari_pgdata:/var/lib/postgresql/data
     networks:
