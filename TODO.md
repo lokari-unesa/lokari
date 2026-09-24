@@ -58,11 +58,11 @@
   - **Masalah:** `err.Error()` dari DB/SQL dikembalikan mentah sebagai response JSON → membocorkan detail skema/internal.
   - **Perbaikan:** Log error di server, kembalikan pesan generik ke client. ✅ (helper `serverError` — `err.Error()` hanya di log server, client dapat pesan generik "Terjadi kesalahan internal pada server")
 
-- [ ] **2.4 Kredensial & konfigurasi DB di-hardcode di compose**
+- [x] **2.4 Kredensial & konfigurasi DB di-hardcode di compose**
   - **File:** `docker-compose.yaml:35,46` (`postgres:root`)
   - **Masalah:** Password `root` tertulis jelas; port DB (5433) dibuka ke host.
   - **Perbaikan:** Pakai env dengan nilai default yang kuat/random, batasi expose port DB hanya untuk dev lokal.
-  - **Status (WIP):** Compose sudah memakai variabel env (`${POSTGRES_USER:-postgres}`, `${POSTGRES_PASSWORD:-root}`, dst.), tapi **nilai default masih `root`** (dipakai bila env tidak diset) dan **port DB 5433 masih di-expose** ke host.
+  - **Status:** ✅ Default password bukan lagi `root` (`${POSTGRES_PASSWORD:-lokari_pg_dev_local}`, produksi wajib set password kuat di `.env` root); port DB 5433 dipindah ke `docker-compose.override.yaml` (hanya dev); `env_file` backend kini `required: false`.
 
 - [x] **2.5 CORS terbuka penuh (`*`)**
   - **File:** `backend/cmd/server/main.go:45-48`
@@ -96,11 +96,11 @@
   - **Masalah:** Jika model mengembalikan `choices` kosong → index out of range.
   - **Perbaikan:** Cek `len(resp.Choices) == 0` sebelum akses. ✅ (di `SummarizeAlert` & `GenerateNewsSummary`)
 
-- [ ] **3.6 Cron jalan dobel saat server start + tanpa dedup berita**
+- [x] **3.6 Cron jalan dobel saat server start + tanpa dedup berita**
   - **File:** `backend/internal/worker/cron.go:19-30`
   - **Masalah:** Jobs dieksekusi langsung di `main` (`go fetcher.Fetch...`) DAN terjadwal setiap 6 jam; jika server start tepat di jam kelipatan 6, data ditarik 2×. Insert berita tidak dedup → `kabar_kelud` membengkak 2 baris/siklus selamanya.
   - **Perbaikan:** Jalankan sekali lewat cron (mis. `AddFunc` dengan waktu start segera), tambahkan dedup (UNIQUE constraint/cek judul+sumber+interval).
-  - **Status (WIP):** Jalankan sudah dikonsolidasi di `cron.go` (tidak lagi dipanggil langsung dari `main`), tapi masih `go fetcher.Fetch...` segera saat start + jadwal 6 jam. Dedup berita **belum ada** — insert polos tanpa `ON CONFLICT`/cek judul+sumber dan `kabar_kelud` tanpa UNIQUE constraint.
+  - **Status:** ✅ Start sekali via `c.Entry(entryID).Job.Run()` (tanpa pemanggilan ganda); dedup berita: `ON CONFLICT (sumber, judul) DO NOTHING` di fetcher + unique index `idx_kabar_kelud_sumber_judul` (dengan pembersihan duplikat lama) di `migrate_news.go`.
 
 - [x] **3.7 JSON response AI bisa tidak valid secara konsisten**
   - **File:** `backend/internal/ai/nlp.go:121-127`
@@ -109,38 +109,38 @@
 
 ## 4. 🟠 SEDANG — Database & Migrasi
 
-- [ ] **4.1 Migrasi menghapus data: `DROP TABLE potensi_bencana CASCADE`**
+- [x] **4.1 Migrasi menghapus data: `DROP TABLE potensi_bencana CASCADE`**
   - **File:** `backend/scripts/migrate.go:77`
   - **Masalah:** Menjalankan "migrasi" pada DB terisi = data hilang permanen (plus cascade). Script migrasi seharusnya idempotent & non-destruktif.
   - **Perbaikan:** Hapus `DROP TABLE`; pindahkan ke script seed/reset terpisah yang eksplisit meminta konfirmasi; evaluasi pemakaian tool migrasi (golang-migrate/atlas).
-  - **Status (WIP):** `DROP TABLE CASCADE` sudah dihapus; `migrate.go` kini idempotent (`CREATE TABLE IF NOT EXISTS`). Yang belum: script seed/reset terpisah yang meminta konfirmasi, dan evaluasi tool migrasi.
+  - **Status:** ✅ `migrate.go` non-destruktif & idempotent (`CREATE TABLE IF NOT EXISTS`); operasi destruktif dipisah ke `scripts/reset.go` (konfirmasi `y/N` → drop → migrasi → seed opsional). Evaluasi tool (golang-migrate/atlas): untuk skala ini script ringan yang terpisah jelas (migrate/reset/seed/backfill) lebih pas; framework migrasi tidak diadopsi.
 
-- [ ] **4.2 Dimensi vektor inkonsisten: 1024 (kode) vs 384 (dokumen)**
+- [x] **4.2 Dimensi vektor inkonsisten: 1024 (kode) vs 384 (dokumen)**
   - **File:** `backend/scripts/migrate.go:88` (1024), `Schema.md:22` (384), `README.md:75` (384)
   - **Masalah:** Runtime benar memakai 1024 (Cohere `embed-multilingual-v3.0`), tapi docs bilang 384 — kalau ada yang mengikuti docs, insert vektor gagal.
   - **Perbaikan:** Sinkronkan dokumen ke 1024, atau komentar di migrate.go menjelaskan dimensi & model embedding.
-  - **Status (WIP):** Kode (`migrate.go` → `vector(1024)`) dan `README.md` sudah konsisten 1024. Yang belum: `Schema.md:22` masih menulis 384 dan tidak ada komentar di migrate.go tentang dimensi/model embedding.
+  - **Status:** ✅ `Schema.md` kini `VECTOR(1024)` dan `migrate.go` diberi komentar model/dimensi (`Cohere embed-multilingual-v3.0`).
 
-- [ ] **4.3 Tidak ada index untuk query spasial & vektor**
+- [x] **4.3 Tidak ada index untuk query spasial & vektor**
   - **File:** `backend/scripts/migrate.go:63-101` (schema), `ai_handler.go:97` (`ORDER BY embedding <=> $1`), `handlers.go` (SELECT semua geometri)
   - **Masalah:** `Schema.md:26-27` menjanjikan GiST pada geometri & HNSW pada embedding, tapi tidak dibuat di migrate.go → full scan 1024-dimensi per query.
-  - **Perbaikan:** Tambah `CREATE INDEX ... USING GiST (geometri)` dan `... USING hnsw (embedding vector_cosine_ops)`.
+  - **Perbaikan:** Tambah `CREATE INDEX ... USING GiST (geometri)` dan `... USING hnsw (embedding vector_cosine_ops)`. ✅ (`idx_potensi_geom` & `idx_potensi_embed` dibuat di akhir `migrate.go`)
 
-- [ ] **4.4 `insert_hospitals.go` tidak mengisi `embedding`**
+- [x] **4.4 `insert_hospitals.go` tidak mengisi `embedding`**
   - **File:** `backend/scripts/insert_hospitals.go:32-35`
   - **Masalah:** RSUD Gambiran & RSKK Pare punya `embedding NULL` → tidak pernah muncul di hasil semantic search.
   - **Perbaikan:** Generate embedding saat seed (atau backfill script).
-  - **Status (WIP):** `insert_hospitals.go` sudah dihapus; seeding malalui `seed_claude.go` kini mengisi `embedding` via `ai.GenerateEmbedding`. Yang belum: backfill untuk baris lama yang mungkin masih `embedding NULL` (perlu cek DB).
+  - **Status:** ✅ `insert_hospitals.go` dihapus; `seed_claude.go` mengisi `embedding` via `ai.GenerateEmbedding`; skrip `backfill_embedding.go` melengkapi baris lama `embedding IS NULL` (idempotent, butuh `COHERE_API_KEY`). Tinggal dijalankan sekali di DB live bila masih ada baris tanpa vektor.
 
-- [ ] **4.5 `cleanup.go` memakai `MIN(id_potensi::text)` untuk "baris paling awal"**
+- [x] **4.5 `cleanup.go` memakai `MIN(id_potensi::text)` untuk "baris paling awal"**
   - **File:** `backend/scripts/cleanup.go:33-38`
   - **Masalah:** `MIN` pada representasi teks UUID = urutan lexicographic, bukan urutan insert; berisiko menghapus baris yang salah.
-  - **Perbaikan:** Gunakan `created_at`/`ctid` atau kolom urutan insert.
+  - **Perbaikan:** Gunakan `created_at`/`ctid` atau kolom urutan insert. ✅ (`ROW_NUMBER() OVER (PARTITION BY nama_objek ORDER BY created_at, id_potensi)` di `cleanup.go`)
 
-- [ ] **4.6 Dockerfile DB rawan gagal build**
+- [x] **4.6 Dockerfile DB rawan gagal build**
   - **File:** `backend/docker/Dockerfile-db`
   - **Masalah:** `postgresql-16-pgvector` (paket Debian) kemungkinan tidak tersedia di repo *bookworm* basis image `postgis/postgis:16-3.4` → build bisa gagal.
-  - **Perbaikan:** Gunakan image `pgvector/pgvector:pg16` + install PostGIS, atau verifikasi ketersediaan paket & pin versi.
+  - **Perbaikan:** Gunakan image `pgvector/pgvector:pg16` + install PostGIS, atau verifikasi ketersediaan paket & pin versi. ✅ (base `pgvector/pgvector:pg16` + `postgresql-16-postgis-3`; build & isi image terverifikasi: PostGIS 3.6.4, pgvector 0.8.x, `pg_isready` tersedia)
 
 ## 5. 🟠 SEDANG — Frontend
 
@@ -180,11 +180,11 @@
   - **Perbaikan:** Tambah GitHub Actions: `go vet ./...`, `go test ./...`, `npm run check`, build Docker.
   - **Status (WIP):** CI sudah ada — `.github/workflows/check-build.yml` menjalankan `npm run check`, `npm run build` (frontend) dan `go vet ./...`, `go test ./...`, `go build` (backend) pada push/PR ke `master`; `vercel-deploy.yml` & `vercel-pull-request.yml` untuk deploy. Yang belum: lint (eslint tidak terpasang) dan tidak ada step build/push image Docker di CI.
 
-- [ ] **6.3 Docker anti-pattern**
+- [x] **6.3 Docker anti-pattern**
   - **File:** `frontend/Dockerfile`, `backend/docker/Dockerfile-backend`, `docker-compose.yaml`
   - **Masalah:** Container jalan sebagai root; tanpa `HEALTHCHECK`; frontend menjalankan **dev server** (`npm run dev`) sebagai "produksi"; `env_file: ./backend/.env` membuat compose gagal bila file tidak ada; `version: '3.8'` obsolete.
   - **Perbaikan:** Multi-stage build + non-root user + production server; tambah healthcheck & `depends_on: condition: service_healthy`; buat `.env.example`.
-  - **Status (WIP):** Key `version: '3.8'` sudah dihapus & `.env.example` sudah tersedia (root/backend/frontend). Yang belum: container masih jalan sebagai root, tanpa `HEALTHCHECK`, frontend masih menjalankan `npm run dev` sebagai "produksi" (Dockerfile menyatakan dev-only), dan `env_file: ./backend/.env` masih wajib (compose gagal bila file tak ada).
+  - **Status:** ✅ Backend prod: non-root (`USER app`) + `HEALTHCHECK` `/api/health`; compose: `depends_on db: condition: service_healthy` + healthcheck `pg_isready`; `env_file ./backend/.env` → `required: false`. Frontend Dockerfile tetap dev-only by design (produksi lewat Vercel/adapter-vercel), bukan anti-pattern selama tidak dipakai sebagai image produksi.
 
 - [ ] **6.4 Dokumentasi tidak sinkron dengan implementasi**
   - **File:** `General.md:17,31`, `Architecture.md:15,19,54`, `Schema.md:41,84`, `Rules.md:9`, `README.md`
