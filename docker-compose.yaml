@@ -16,7 +16,8 @@ services:
     ports:
       - "${BACKEND_PORT:-5181}:${BACKEND_PORT:-5181}"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file:
       - path: ./backend/.env
         required: false
@@ -40,6 +41,12 @@ services:
       # POSTGRES_PASSWORD dengan nilai kuat (mis. lewat `.env` root proyek).
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lokari_pg_dev_local}
       POSTGRES_DB: ${POSTGRES_DB:-lokari_db}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-lokari_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     volumes:
       - lokari_pgdata:/var/lib/postgresql/data
     networks:
