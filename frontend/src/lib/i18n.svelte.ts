@@ -23,7 +23,13 @@ export const translations = {
     'status.desc': 'Tetap waspada dan ikuti petunjuk dari desa.',
     'status.updated': 'Diperbarui:',
     'status.source': 'Sumber:',
-    'status.sourceVal': 'Pemerintah (BMKG & NASA)',
+    'status.sourceVal': 'PVMBG MAGMA',
+    'status.monitoring': 'MEMANTAU',
+    'status.normal': 'Gunung Kelud berstatus Normal (Level I). Tidak ada aktivitas yang membahayakan — warga dapat beraktivitas seperti biasa, namun tetap waspada.',
+    'status.waspada': 'Gunung Kelud berstatus Waspada (Level II). Jauhi aliran sungai (Kali Ngobo) dan pantau terus informasi resmi PVMBG serta arahan aparat desa.',
+    'status.siaga': 'Gunung Kelud berstatus Siaga (Level III). Siapkan tas siaga, hindari area rawan lahar, dan ikuti arahan petugas.',
+    'status.awas': 'Gunung Kelud berstatus Awas (Level IV). Segera menuju tempat aman terdekat dan ikuti instruksi BPBD serta aparat desa.',
+    'status.nodata': 'Belum ada data status terbaru dari PVMBG. Sistem tetap memantau aktivitas Gunung Kelud.',
     
     // Quick Actions
     'qa.risk.title': 'Peta Bahaya',
@@ -219,7 +225,13 @@ export const translations = {
     'status.desc': 'Stay alert and follow village instructions.',
     'status.updated': 'Updated:',
     'status.source': 'Source:',
-    'status.sourceVal': 'Government (BMKG & NASA)',
+    'status.sourceVal': 'PVMBG MAGMA',
+    'status.monitoring': 'MONITORING',
+    'status.normal': 'Mount Kelud is at NORMAL level (Level I). No activity endangers residents — normal activities may resume, but stay alert.',
+    'status.waspada': 'Mount Kelud is at WATCH level (Level II). Stay away from rivers (Kali Ngobo) and keep monitoring official information from PVMBG and village officials.',
+    'status.siaga': 'Mount Kelud is at ALERT level (Level III). Prepare an emergency bag, avoid lahar-prone areas, and follow instructions from officials.',
+    'status.awas': 'Mount Kelud is at DANGER level (Level IV). Immediately head to the nearest safe place and follow BPBD and village officials\' instructions.',
+    'status.nodata': 'No latest status data from PVMBG yet. The system continues monitoring Mount Kelud.',
     
     // Quick Actions
     'qa.risk.title': 'Danger Map',
