@@ -75,7 +75,8 @@ func main() {
 			Subscriber:      "mailto:admin@lokari.my.id",
 			VAPIDPublicKey:  vapidPublic,
 			VAPIDPrivateKey: vapidPrivate,
-			TTL:             60, // uji coba — cukup bertahan 1 menit
+			Urgency:         webpush.UrgencyHigh, // Info penting — jangan ditunda push service
+			TTL:             60,                  // uji coba — cukup bertahan 1 menit
 		})
 		switch {
 		case err != nil:
