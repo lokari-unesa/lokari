@@ -180,6 +180,7 @@ func (s *FetcherService) broadcastPush(title, summary, category string) {
 	b, _ := json.Marshal(payloadMap)
 
 	count := 0
+	deleted := 0
 	for rows.Next() {
 		var ep, p256, auth string
 		if err := rows.Scan(&ep, &p256, &auth); err != nil {
@@ -191,15 +192,27 @@ func (s *FetcherService) broadcastPush(title, summary, category string) {
 			Keys: webpush.Keys{P256dh: p256, Auth: auth},
 		}
 
-		_, err := webpush.SendNotification(b, sub, &webpush.Options{
+		resp, err := webpush.SendNotification(b, sub, &webpush.Options{
 			Subscriber:      "mailto:admin@lokari.my.id",
 			VAPIDPublicKey:  vapidPublic,
 			VAPIDPrivateKey: vapidPrivate,
 			TTL:             3600, // Aktif selama 1 jam
 		})
-		if err == nil {
+		switch {
+		case err != nil:
+			// Gagal level transpor (network/timeout) — bukan salah subscription, biarkan
+			continue
+		case resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound:
+			// Subscription sudah tidak valid (dihapus browser / kedaluwarsa) — buang dari DB
+			if _, delErr := s.DB.Exec(context.Background(),
+				"DELETE FROM push_subscriptions WHERE endpoint = $1", ep); delErr == nil {
+				deleted++
+			}
+		case resp.StatusCode >= 200 && resp.StatusCode < 300:
 			count++
+		default:
+			log.Printf("[Push] Gagal kirim ke %s (HTTP %d)\n", ep, resp.StatusCode)
 		}
 	}
-	log.Printf("[Push] BERHASIL! Radar darurat menembakkan notifikasi ke %d perangkat warga!\n", count)
+	log.Printf("[Push] Selesai: %d notifikasi terkirim, %d subscription mati dibersihkan\n", count, deleted)
 }
