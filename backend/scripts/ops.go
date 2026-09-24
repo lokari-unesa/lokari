@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/SherClockHolmes/webpush-go"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,7 +21,7 @@ import (
 // ops.go — utilitas operasional harian LOKARI.
 //
 //	go run scripts/ops.go hot|cold|all  # jalankan job penarikan data secara manual (tanpa menunggu cron)
-//	go run scripts/ops.go push          # kirim notifikasi uji coba ke seluruh subscriber
+//	go run scripts/ops.go push          # kirim DEMO semua jenis notif (data dummy) ke seluruh subscriber
 //	go run scripts/ops.go vapid         # generate pasangan kunci VAPID baru
 //
 // Membutuhkan DATABASE_URL di .env (sudah tersedia di environment container);
@@ -129,39 +130,79 @@ func testPush() {
 		return
 	}
 
-	payload, _ := json.Marshal(map[string]string{
-		"title": "LOKARI: Notifikasi Uji Coba",
-		"body":  "Selamat, notifikasi LOKARI berfungsi dengan baik.",
-		"url":   "/news",
-	})
+	// Data dummy yang meniru SEMUA jenis notifikasi yang mampu dikirim sistem:
+	//   1. Perubahan status Kelud NAIK  → kategori volcano (MAGMA)
+	//   2. Perubahan status Kelud TURUN → kategori volcano (MAGMA)
+	//   3. Gempa BMKG yang terasa       → kategori warning (BMKG)
+	//   4. Event vulkanik NASA EONET    → kategori volcano (NASA EONET)
+	// Format judul & body sengaja dibuat sama persis dengan broadcastPush asli
+	// ("LOKARI <KATEGORI>: ...") supaya tampilan popup sama seperti kondisi nyata.
+	type demoNotif struct {
+		Title string `json:"title"`
+		Body  string `json:"body"`
+		URL   string `json:"url"`
+	}
+
+	demos := []demoNotif{
+		{
+			Title: "LOKARI VOLCANO: Status Gunung Kelud: Level II (Waspada)",
+			Body:  "Tingkat aktivitas Gunung Kelud berubah: Level I (Normal) → Level II (Waspada). Jauhi aliran sungai dan pantau terus informasi resmi PVMBG MAGMA serta arahan BPBD setempat.",
+			URL:   "/news",
+		},
+		{
+			Title: "LOKARI VOLCANO: Status Gunung Kelud: Level I (Normal)",
+			Body:  "Tingkat aktivitas Gunung Kelud berubah: Level II (Waspada) → Level I (Normal). Warga dapat beraktivitas seperti biasa, namun tetap waspada.",
+			URL:   "/news",
+		},
+		{
+			Title: "LOKARI WARNING: GEMPA M 4,2 TERASA — Kab. Kediri",
+			Body:  "Gempa berkekuatan M 4,2 terjadi 85 km arah barat daya Kota Kediri, dirasakan MMI III di Desa Jarak. Tetap tenang, jauhi bangunan yang retak, dan ikuti arahan petugas.",
+			URL:   "/news",
+		},
+		{
+			Title: "LOKARI VOLCANO: Awan Panas Gunung Semeru Terpantau",
+			Body:  "NASA EONET mencatat aktivitas vulkanik di Gunung Semeru (± 77 km dari Kediri). Hindari area rawan dan ikuti arahan BPBD setempat.",
+			URL:   "/news",
+		},
+	}
 
 	sent, deleted := 0, 0
-	for _, sub := range subs {
-		resp, err := webpush.SendNotification(payload, sub, &webpush.Options{
-			Subscriber:      "mailto:admin@lokari.my.id",
-			VAPIDPublicKey:  vapidPublic,
-			VAPIDPrivateKey: vapidPrivate,
-			Urgency:         webpush.UrgencyHigh, // Info penting — jangan ditunda push service
-			TTL:             60,                  // uji coba — cukup bertahan 1 menit
-		})
-		switch {
-		case err != nil:
-			log.Printf("  gagal (network): %s → %v\n", sub.Endpoint, err)
-		case resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound:
-			if _, delErr := pool.Exec(ctx,
-				"DELETE FROM push_subscriptions WHERE endpoint = $1", sub.Endpoint); delErr == nil {
-				deleted++
-				log.Printf("  subscription mati dihapus: %s\n", sub.Endpoint)
+	for i, demo := range demos {
+		payload, _ := json.Marshal(demo)
+
+		for _, sub := range subs {
+			resp, err := webpush.SendNotification(payload, sub, &webpush.Options{
+				Subscriber:      "mailto:admin@lokari.my.id",
+				VAPIDPublicKey:  vapidPublic,
+				VAPIDPrivateKey: vapidPrivate,
+				Urgency:         webpush.UrgencyHigh, // Info penting — jangan ditunda push service
+				TTL:             3600,                // sama seperti notif asli (aktif 1 jam)
+			})
+			switch {
+			case err != nil:
+				log.Printf("  [%d/4] gagal (network): %s → %v\n", i+1, sub.Endpoint, err)
+			case resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound:
+				if _, delErr := pool.Exec(ctx,
+					"DELETE FROM push_subscriptions WHERE endpoint = $1", sub.Endpoint); delErr == nil {
+					deleted++
+					log.Printf("  subscription mati dihapus: %s\n", sub.Endpoint)
+				}
+			case resp.StatusCode >= 200 && resp.StatusCode < 300:
+				sent++
+			default:
+				log.Printf("  [%d/4] gagal (HTTP %d): %s\n", i+1, resp.StatusCode, sub.Endpoint)
 			}
-		case resp.StatusCode >= 200 && resp.StatusCode < 300:
-			sent++
-			log.Printf("  terkirim: %s\n", sub.Endpoint)
-		default:
-			log.Printf("  gagal (HTTP %d): %s\n", resp.StatusCode, sub.Endpoint)
+		}
+		log.Printf("[%d/4] Terkirim: %s\n", i+1, demo.Title)
+
+		// Jeda supaya popup muncul satu per satu, tidak menumpuk.
+		if i < len(demos)-1 {
+			log.Println("Jeda 6 detik sebelum notif berikutnya...")
+			time.Sleep(6 * time.Second)
 		}
 	}
 
-	fmt.Printf("\nHasil: %d terkirim, %d subscription mati dibersihkan, %d total terdaftar.\n", sent, deleted, len(subs))
+	fmt.Printf("\nHasil: %d kiriman terkirim, %d subscription mati dibersihkan, %d total terdaftar.\n", sent, deleted, len(subs))
 }
 
 // generateVAPID menampilkan pasangan kunci VAPID baru untuk .env.

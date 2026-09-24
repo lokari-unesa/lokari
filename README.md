@@ -110,7 +110,7 @@ Notifikasi browser dikirim oleh backend setelah berita bencana baru tersimpan. C
    ```bash
    docker compose exec backend go run scripts/ops.go push
    ```
-   Skrip ini mengirim notifikasi uji ke seluruh perangkat yang sudah subscribe dan sekalian membersihkan subscription yang sudah tidak valid (HTTP 410/404).
+   Skrip ini mengirim **demo semua jenis notifikasi** yang mampu dikirim sistem (data dummy, jeda 6 detik): perubahan status Kelud naik & turun (MAGMA), gempa BMKG yang terasa, dan event vulkanik NASA EONET — format judul persis seperti notif asli, sekalian membersihkan subscription yang sudah tidak valid (HTTP 410/404).
 
 ---
 
