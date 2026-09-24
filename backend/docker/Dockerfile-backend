@@ -16,12 +16,21 @@ CMD ["air"]
 # ============ BUILD — kompilasi binary statis ============
 FROM base AS build
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /app/main ./cmd/server/main.go
+# Tooling operasional (migrate/seed/ops) ikut dibundle sebagai binary terpisah
+# agar tetap bisa dijalankan di image PROD yang tidak punya toolchain Go.
+RUN CGO_ENABLED=0 go build -o /app/lokari-migrate ./scripts/migrate.go && \
+    CGO_ENABLED=0 go build -o /app/lokari-seed ./scripts/seed.go && \
+    CGO_ENABLED=0 go build -o /app/lokari-ops ./scripts/ops.go
 
 # ============ PROD — image runtime minimal ============
 FROM alpine:3.20 AS prod
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY --from=build /app/main /app/main
+# Script operasional + data seed ikut diimage (folder scripts utuh, termasuk
+# Posko.txt). Eksekusi: docker compose exec backend lokari-migrate|seed|ops ...
+COPY --from=build /app/lokari-migrate /app/lokari-seed /app/lokari-ops /usr/local/bin/
+COPY scripts/ /app/scripts/
 # Jangan jalankan proses sebagai root (least privilege)
 RUN adduser -D -u 1001 app && chown -R app:app /app
 USER app
