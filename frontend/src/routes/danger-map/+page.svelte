@@ -2,6 +2,7 @@
   import { Search, Layers, X, Navigation, ShieldCheck, MapPin, Sparkles } from "lucide-svelte";
   import KeludMapView from "$lib/components/KeludMapView.svelte";
   import { cn } from "$lib/utils";
+  import { getGeoCoordinates } from "$lib/geo";
   import { i18n } from "$lib/i18n.svelte";
 
   import { onMount } from "svelte";
@@ -47,11 +48,11 @@
     if (!potensi.kategori.includes("Kesehatan")) {
       const faskesList = potensiList.filter(p => p.kategori.includes("Kesehatan"));
       if (faskesList.length > 0) {
-        const pCoord = JSON.parse(potensi.geometri).coordinates;
+        const pCoord = getGeoCoordinates(potensi.geometri);
         let minDist = Infinity;
         let closest = null;
         for (const f of faskesList) {
-          const fCoord = JSON.parse(f.geometri).coordinates;
+          const fCoord = getGeoCoordinates(f.geometri);
           const d = Math.pow(pCoord[0] - fCoord[0], 2) + Math.pow(pCoord[1] - fCoord[1], 2);
           if (d < minDist) {
             minDist = d;
@@ -195,7 +196,7 @@
             {/if}
           </div>
 
-          <a href="/safe-routes?destName={encodeURIComponent(selectedData.nama_objek)}&destLat={JSON.parse(selectedData.geometri).coordinates[1]}&destLng={JSON.parse(selectedData.geometri).coordinates[0]}" class="w-full mt-5 h-11 inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground font-semibold text-[0.875rem] hover:bg-primary-dark transition-colors">
+          <a href="/safe-routes?destName={encodeURIComponent(selectedData.nama_objek)}&destLat={getGeoCoordinates(selectedData.geometri)[1]}&destLng={getGeoCoordinates(selectedData.geometri)[0]}" class="w-full mt-5 h-11 inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground font-semibold text-[0.875rem] hover:bg-primary-dark transition-colors">
             <Navigation class="w-4 h-4 mr-2" /> {i18n.t('page.risk.popup.route')}
           </a>
         </div>

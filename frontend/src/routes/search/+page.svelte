@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Search, MapPin, Route, ShieldCheck, Info, ChevronRight, Navigation2, Loader2 } from "lucide-svelte";
   import { i18n } from "$lib/i18n.svelte";
+  import { isQueryAllowed, ANOMALY_MESSAGE } from "$lib/queryGuard";
 
   let query = $state("");
   let answered = $state(false);
@@ -11,12 +12,9 @@
   async function performSearch() {
     if (!query.trim()) return;
 
-    // Filter Defensif: Cegah penyalahgunaan kuota AI LOKARI
-    const blocklist = /\b(hamil|janda|seks|porno|judi|slot|togel|pinjol|tambah|kurang|dibagi|dikali|pacar|nikah|jomblo|jual|beli|harga|promo|diskon|bokep|mesum|anjing|babi|bangsat|tolol|goblok|usia|umur|siapa)\b|(\d+\s*[\+\-\*\/]\s*\d+)/i;
-    const allowlist = /\b(posko|pengungsian|aman|selamat|masjid|mushola|musholla|msjd|mshl|sekolah|sd|smp|sma|tk|mi|mts|puskesmas|puskes|rumah sakit|rs|balai|bale|lapangan|lpngn|tempat|jalan|rute|jalur|evakuasi|lahar|gunung|kelud|bencana|darurat|terdekat|dekat|desa|dusun|lokasi|titik|kumpul|panti|warga|bantuan|jarak|plosoklaten|kediri|ngobo|simbar|kidul|gedung|kantor|apotek|klinik|bidan|polindes|polsek|koramil|kecamatan)\b/i;
-    
-    if (blocklist.test(query) || !allowlist.test(query)) {
-      errorMessage = "Sistem Mendeteksi Anomali: Pencarian AI cerdas LOKARI hanya difokuskan untuk lokasi evakuasi, fasilitas darurat, dan mitigasi bencana Gunung Kelud.";
+    // Filter Defensif: modul bersama $lib/queryGuard (validasi sebenarnya di backend)
+    if (!isQueryAllowed(query)) {
+      errorMessage = ANOMALY_MESSAGE;
       results = [];
       answered = true;
       return;

@@ -19,6 +19,8 @@
   import KeludMapView from "$lib/components/KeludMapView.svelte";
   import StatusBadge from "$lib/components/StatusBadge.svelte";
   import { i18n } from "$lib/i18n.svelte";
+  import { getGeoCoordinates, dedupeCoords } from "$lib/geo";
+  import { isQueryAllowed, ANOMALY_MESSAGE } from "$lib/queryGuard";
   import { page } from "$app/stores";
   import { onMount } from "svelte";
 
@@ -46,13 +48,6 @@
   let selected = $state(false); 
   let selectedData: any = $state(null);
   let rekomendasiFaskes: any = $state(null);
-
-  function getGeoCoordinates(geom: any) {
-    if (typeof geom === "string") {
-      try { return JSON.parse(geom).coordinates; } catch { return [0, 0]; }
-    }
-    return geom?.coordinates || [0, 0];
-  }
 
   function onMarkerClick(potensi: any) {
     selectedData = potensi;
@@ -178,12 +173,9 @@
   async function submitAISearch() {
     if (!searchQuery.trim()) return;
 
-    // Filter Defensif: Cegah penyalahgunaan kuota AI LOKARI
-    const blocklist = /\b(hamil|janda|seks|porno|judi|slot|togel|pinjol|tambah|kurang|dibagi|dikali|pacar|nikah|jomblo|jual|beli|harga|promo|diskon|bokep|mesum|anjing|babi|bangsat|tolol|goblok|usia|umur|siapa)\b|(\d+\s*[\+\-\*\/]\s*\d+)/i;
-    const allowlist = /\b(posko|pengungsian|aman|selamat|masjid|mushola|musholla|msjd|mshl|sekolah|sd|smp|sma|tk|mi|mts|puskesmas|puskes|rumah sakit|rs|balai|bale|lapangan|lpngn|tempat|jalan|rute|jalur|evakuasi|lahar|gunung|kelud|bencana|darurat|terdekat|dekat|desa|dusun|lokasi|titik|kumpul|panti|warga|bantuan|jarak|plosoklaten|kediri|ngobo|simbar|kidul|gedung|kantor|apotek|klinik|bidan|polindes|polsek|koramil|kecamatan)\b/i;
-    
-    if (blocklist.test(searchQuery) || !allowlist.test(searchQuery)) {
-      alert("Sistem Mendeteksi Anomali: Pencarian AI cerdas LOKARI hanya difokuskan untuk lokasi evakuasi, fasilitas darurat, dan mitigasi bencana Gunung Kelud.");
+    // Filter Defensif: modul bersama $lib/queryGuard (validasi sebenarnya di backend)
+    if (!isQueryAllowed(searchQuery)) {
+      alert(ANOMALY_MESSAGE);
       return;
     }
 
@@ -299,42 +291,87 @@
   let routeStatus = $state<"safe" | "fallback" | "danger">("safe");
   let routeCoords = $state<any[]>([]);
 
+  type RouteResult = {
+    distanceKm: number | null;
+    etaMinutes: number | null;
+    status: "safe" | "fallback" | "danger";
+    coords: any[];
+  };
+
+  // Cache hasil rute per pasangan koordinat (dibulatkan 5 desimal ≈ 1 m)
+  // agar $effect tidak me-refetch rute yang sama berulang kali.
+  const routeCache = new Map<string, RouteResult>();
+
+  function fallbackRoute(): RouteResult {
+    return {
+      distanceKm: null,
+      etaMinutes: null,
+      status: "fallback",
+      coords: [[originLat, originLng], [destLat, destLng]],
+    };
+  }
+
+  function applyRouteResult(result: RouteResult) {
+    realDistanceKm = result.distanceKm;
+    realEtaMinutes = result.etaMinutes;
+    routeStatus = result.status;
+    routeCoords = result.coords;
+  }
+
   $effect(() => {
-    if (destLat !== 0 && destLng !== 0) {
-      fetch(`/api/route?start=${originLng},${originLat}&end=${destLng},${destLat}`)
-        .then(r => r.json())
-        .then(data => {
-           if (data.routes && data.routes.length > 0) {
-              const route = data.routes[0];
-              realDistanceKm = route.distance / 1000;
-              realEtaMinutes = Math.round(route.duration / 60);
-              routeStatus = route.status || (route.isSafe ? "safe" : "danger");
-              
-              const coords = route.geometry.coordinates;
-              routeCoords = [
-                [originLat, originLng],
-                ...coords.map((c: any[]) => [c[1], c[0]]),
-                [destLat, destLng]
-              ];
-           } else {
-             realDistanceKm = null;
-             realEtaMinutes = null;
-             routeStatus = "fallback";
-             routeCoords = [[originLat, originLng], [destLat, destLng]];
-           }
-        })
-        .catch(e => {
-           console.error("Gagal menarik rute:", e);
-           realDistanceKm = null;
-           realEtaMinutes = null;
-           routeStatus = "fallback";
-           routeCoords = [[originLat, originLng], [destLat, destLng]];
-        });
+    if (destLat === 0 && destLng === 0) return;
+
+    const key = `${originLat.toFixed(5)},${originLng.toFixed(5)}|${destLat.toFixed(5)},${destLng.toFixed(5)}`;
+    const cached = routeCache.get(key);
+    if (cached) {
+      applyRouteResult(cached);
+      return;
     }
+
+    fetch(`/api/route?start=${originLng},${originLat}&end=${destLng},${destLat}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          // Server sudah mengembalikan polyline lengkap (termasuk endpoint) —
+          // buang titik duplikat, dan jaga-jaga jika endpoint tidak persis cocok.
+          const poly = dedupeCoords((route.geometry.coordinates as any[]).map((c: any[]) => [c[1], c[0]]));
+          if (poly.length === 0) {
+            poly.push([originLat, originLng]);
+          }
+          const first = poly[0];
+          const last = poly[poly.length - 1];
+          if (Math.abs(first[0] - originLat) > 1e-5 || Math.abs(first[1] - originLng) > 1e-5) {
+            poly.unshift([originLat, originLng]);
+          }
+          if (Math.abs(last[0] - destLat) > 1e-5 || Math.abs(last[1] - destLng) > 1e-5) {
+            poly.push([destLat, destLng]);
+          }
+          const result: RouteResult = {
+            distanceKm: route.distance / 1000,
+            etaMinutes: Math.round(route.duration / 60),
+            status: route.status || (route.isSafe ? "safe" : "danger"),
+            coords: poly,
+          };
+          routeCache.set(key, result);
+          applyRouteResult(result);
+        } else {
+          const result = fallbackRoute();
+          routeCache.set(key, result);
+          applyRouteResult(result);
+        }
+      })
+      .catch(e => {
+        console.error("Gagal menarik rute:", e);
+        const result = fallbackRoute();
+        routeCache.set(key, result);
+        applyRouteResult(result);
+      });
   });
 
   let distanceKm = $derived(realDistanceKm !== null ? realDistanceKm : calcDistance(originLat, originLng, destLat, destLng));
-  let etaMinutes = $derived(realEtaMinutes !== null ? realEtaMinutes : Math.max(3, Math.round((distanceKm / 15) * 60)));
+  // Tanpa ETA dari routing engine, tampilkan "—", bukan angka karangan.
+  let etaMinutes = $derived<number | null>(realEtaMinutes);
 
   function formatDistance(distKm: number) {
     const meters = Math.round(distKm * 1000);
@@ -591,7 +628,7 @@
             {@render Metric(
               Clock,
               i18n.t("page.evac.route.est"),
-              `${etaMinutes} ${i18n.t("page.evac.unit.min")}`,
+              etaMinutes !== null ? `${etaMinutes} ${i18n.t("page.evac.unit.min")}` : "—",
             )}
           </div>
 
@@ -657,11 +694,7 @@
           >
             <span class="flex items-center gap-2"
               ><RouteIcon class="w-4 h-4 text-primary" />
-              {formatDistance(distanceKm * 1.5)}</span
-            >
-            <span class="flex items-center gap-2"
-              ><Clock class="w-4 h-4 text-primary" />
-              {Math.round(etaMinutes * 1.5)} {i18n.t("page.evac.unit.min")}</span
+              Bukaan rute ke posko lain dapat dilihat di Peta Bahaya.</span
             >
             <div class="mt-0.5">
               <StatusBadge
