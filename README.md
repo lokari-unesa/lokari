@@ -82,6 +82,20 @@ Tunggu hingga proses ekstraksi AI selesai 100%!
 > ```
 > Skrip ini hanya memproses baris dengan `embedding IS NULL` (idempotent).
 
+### Web Push Notification (opsional)
+Notifikasi browser dikirim oleh backend setelah berita bencana baru tersimpan. Cara mengaktifkan:
+
+1. **Generate pasangan VAPID key** (sekali saja):
+   ```bash
+   docker compose exec backend go run scripts/vapid.go
+   ```
+2. **Isi env** — salin `VAPID_PUBLIC_KEY` & `VAPID_PRIVATE_KEY` ke `backend/.env`, lalu set `PUBLIC_VAPID_KEY` di `frontend/.env` **dengan public key yang sama** (lihat `backend/.env.example` & `frontend/.env.example`).
+3. **Buat tabel subscription:**
+   ```bash
+   docker compose exec backend go run scripts/migrate_push.go
+   ```
+4. Pastikan frontend dibuka lewat **HTTPS** atau `localhost` (persyaratan browser untuk Web Push). Setiap berita baru yang berhasil disimpan akan otomatis memicu notifikasi ke semua perangkat yang sudah subscribe.
+
 ---
 
 ## Menjalankan Projek Secara Manual (Tanpa Docker Penuh)
