@@ -144,7 +144,7 @@ export const translations = {
     'page.about.partners': 'Kemitraan Strategis',
     'page.about.partners.desc': 'LOKARI merupakan luaran dari program Studi Independen Mobilitas Akademik yang bermitra dengan:',
     'page.about.sources': 'Sumber Data Resmi',
-    'page.about.sources.desc': 'Data peringatan dini, peta bahaya, dan cuaca pada platform ini bersumber dari lembaga resmi pemerintah:',
+    'page.about.sources.desc': 'Data peringatan dini dan pemantauan aktivitas pada platform ini bersumber dari lembaga resmi pemerintah dan internasional:',
     
     // Search Page (Simple Language)
     'page.search.title': 'Pencarian Informasi',
@@ -346,7 +346,7 @@ export const translations = {
     'page.about.partners': 'Strategic Partnerships',
     'page.about.partners.desc': 'LOKARI is the output of an Independent Academic Mobility Study program in partnership with:',
     'page.about.sources': 'Official Data Sources',
-    'page.about.sources.desc': 'Early warning data, hazard maps, and weather on this platform are sourced from official government agencies:',
+    'page.about.sources.desc': 'Early warning and activity monitoring data on this platform are sourced from official government and international agencies:',
     
     // Search Page (Simple Language)
     'page.search.title': 'Information Search',
