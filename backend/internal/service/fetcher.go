@@ -59,7 +59,7 @@ func (s *FetcherService) FetchBMKGData() {
 				log.Printf("[Zero-Admin] Gagal meringkas berita BMKG: %v\n", err)
 			} else if s.DB != nil {
 				// Simpan hasil ringkasan ke database
-				query := `INSERT INTO kabar_kelud (kategori, judul, ringkasan, sumber) VALUES ($1, $2, $3, $4)`
+				query := `INSERT INTO kabar_kelud (kategori, judul, ringkasan, sumber) VALUES ($1, $2, $3, $4) ON CONFLICT (sumber, judul) DO NOTHING`
 				_, err = s.DB.Exec(context.Background(), query, news.Category, news.Title, news.Summary, "BMKG")
 				if err != nil {
 					log.Printf("[Zero-Admin] Gagal menyimpan berita BMKG ke DB: %v\n", err)
@@ -116,7 +116,7 @@ func (s *FetcherService) FetchNASAData() {
 				log.Printf("[Zero-Admin] Gagal meringkas berita NASA: %v\n", err)
 			} else if s.DB != nil {
 				// Simpan hasil ringkasan ke database
-				query := `INSERT INTO kabar_kelud (kategori, judul, ringkasan, sumber) VALUES ($1, $2, $3, $4)`
+				query := `INSERT INTO kabar_kelud (kategori, judul, ringkasan, sumber) VALUES ($1, $2, $3, $4) ON CONFLICT (sumber, judul) DO NOTHING`
 				_, err = s.DB.Exec(context.Background(), query, news.Category, news.Title, news.Summary, "NASA EONET")
 				if err != nil {
 					log.Printf("[Zero-Admin] Gagal menyimpan berita NASA ke DB: %v\n", err)
