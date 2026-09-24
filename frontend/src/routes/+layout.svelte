@@ -10,7 +10,9 @@
 	onMount(async () => {
 		if ('serviceWorker' in navigator && 'PushManager' in window) {
 			try {
-				const registration = await navigator.serviceWorker.register('/sw.js');
+				await navigator.serviceWorker.register('/sw.js');
+				// Tunggu SW aktif dulu — hindari AbortError saat kunjungan pertama
+				const registration = await navigator.serviceWorker.ready;
 				
 				if (Notification.permission === 'default') {
 					// Memicu native pop-up seperti kompas.com setelah 2 detik
@@ -31,8 +33,11 @@
 
 	async function subscribeToPush(registration: ServiceWorkerRegistration) {
 		try {
-			const existing = await registration.pushManager.getSubscription();
-			if (existing) return;
+			const vapidKey = env.PUBLIC_VAPID_KEY;
+			if (!vapidKey) {
+				console.warn("VAPID Key belum dikonfigurasi, notifikasi tidak aktif.");
+				return;
+			}
 
 			const urlB64ToUint8Array = (base64String: string) => {
 				const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -45,17 +50,15 @@
 				return outputArray;
 			};
 
-			const vapidKey = env.PUBLIC_VAPID_KEY;
-			if (!vapidKey) {
-				console.warn("VAPID Key belum dikonfigurasi, notifikasi tidak aktif.");
-				return;
+			// Pakai subscription browser yang sudah ada kalau sudah dibuat;
+			// kalau belum, buat baru. Keduanya tetap di-sync ke backend di bawah.
+			let subscription = await registration.pushManager.getSubscription();
+			if (!subscription) {
+				subscription = await registration.pushManager.subscribe({
+					userVisibleOnly: true,
+					applicationServerKey: urlB64ToUint8Array(vapidKey)
+				});
 			}
-
-			const applicationServerKey = urlB64ToUint8Array(vapidKey);
-			const subscription = await registration.pushManager.subscribe({
-				userVisibleOnly: true,
-				applicationServerKey
-			});
 
 			const subJSON = subscription.toJSON();
 			// Relatif /api/* agar konsisten dengan halaman lain:
