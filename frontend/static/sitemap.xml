@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Beranda -->
+  <url>
+    <loc>https://lokari.my.id/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <!-- Peta Bahaya -->
+  <url>
+    <loc>https://lokari.my.id/danger-map</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <!-- Rute Aman -->
+  <url>
+    <loc>https://lokari.my.id/safe-routes</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <!-- Kabar Kelud -->
+  <url>
+    <loc>https://lokari.my.id/news</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <!-- Tentang & Panduan -->
+  <url>
+    <loc>https://lokari.my.id/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+</urlset>

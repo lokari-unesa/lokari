@@ -178,7 +178,7 @@ func parseNewsItem(content string) (*NewsItem, error) {
 
 	var news NewsItem
 	if err := json.Unmarshal([]byte(trimmed), &news); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Gagal parsing JSON: %v", err)
 	}
 	return &news, nil
 }

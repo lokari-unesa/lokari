@@ -40,7 +40,12 @@
       const data = await res.json();
       if (data.status === "success" && data.data) {
         items = data.data.map((n: any) => {
-          const catSlug = categoryToSlug[n.category] || "volcano";
+          let rawCategory = n.category;
+          // Smart Override: Jika AI salah memetakan Gempa BMKG menjadi Cuaca
+          if (n.title.toLowerCase().includes("gempa")) {
+            rawCategory = "warning";
+          }
+          const catSlug = categoryToSlug[rawCategory] || "volcano";
           const meta = categoryMeta[catSlug] || categoryMeta["volcano"];
           return {
             category: catSlug,
