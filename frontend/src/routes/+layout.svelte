@@ -3,7 +3,7 @@
 	import Navbar from '$lib/components/Navbar.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import { onMount } from 'svelte';
-	import { PUBLIC_VAPID_KEY } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 
 	let { children } = $props();
 
@@ -45,7 +45,13 @@
 				return outputArray;
 			};
 
-			const applicationServerKey = urlB64ToUint8Array(PUBLIC_VAPID_KEY);
+			const vapidKey = env.PUBLIC_VAPID_KEY;
+			if (!vapidKey) {
+				console.warn("VAPID Key belum dikonfigurasi, notifikasi tidak aktif.");
+				return;
+			}
+
+			const applicationServerKey = urlB64ToUint8Array(vapidKey);
 			const subscription = await registration.pushManager.subscribe({
 				userVisibleOnly: true,
 				applicationServerKey
