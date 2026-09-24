@@ -27,6 +27,7 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 	h := handlers.NewHandler(db)
 	aiHandler := handlers.NewAIHandler(db)
 	newsHandler := handlers.NewNewsHandler(db)
+	pushHandler := handlers.NewPushHandler(db)
 
 	// Root route to show a welcome message instead of 404
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -51,4 +52,7 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 
 	// News Routes
 	api.Get("/news", newsHandler.GetNews)
+
+	// Push Notification Routes
+	api.Post("/subscribe", pushHandler.Subscribe)
 }

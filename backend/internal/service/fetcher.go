@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
+	"github.com/SherClockHolmes/webpush-go"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lokari/backend/internal/ai"
 )
@@ -65,6 +68,9 @@ func (s *FetcherService) FetchBMKGData() {
 					log.Printf("[Zero-Admin] Gagal menyimpan berita BMKG ke DB: %v\n", err)
 				} else {
 					log.Println("[Zero-Admin] Berita BMKG berhasil disimpan ke Database.")
+					if news.Category == "warning" || news.Category == "volcano" || news.Category == "evac" {
+						go s.broadcastPush(news.Title, news.Summary, news.Category)
+					}
 				}
 			}
 		}
@@ -122,6 +128,9 @@ func (s *FetcherService) FetchNASAData() {
 					log.Printf("[Zero-Admin] Gagal menyimpan berita NASA ke DB: %v\n", err)
 				} else {
 					log.Println("[Zero-Admin] Berita NASA berhasil disimpan ke Database.")
+					if news.Category == "warning" || news.Category == "volcano" || news.Category == "evac" {
+						go s.broadcastPush(news.Title, news.Summary, news.Category)
+					}
 				}
 			}
 		}
@@ -142,4 +151,55 @@ func (s *FetcherService) logUpdate(sumberAPI string, status string) {
 	if err != nil {
 		log.Printf("[Zero-Admin] Gagal mencatat log_update: %v\n", err)
 	}
+}
+
+// broadcastPush menembakkan notifikasi Web Push ke seluruh token warga yang terdaftar
+func (s *FetcherService) broadcastPush(title, summary, category string) {
+	if s.DB == nil {
+		return
+	}
+	rows, err := s.DB.Query(context.Background(), "SELECT endpoint, p256dh, auth FROM push_subscriptions")
+	if err != nil {
+		log.Println("[Push] Gagal mengambil list warga:", err)
+		return
+	}
+	defer rows.Close()
+
+	vapidPublic := os.Getenv("VAPID_PUBLIC_KEY")
+	vapidPrivate := os.Getenv("VAPID_PRIVATE_KEY")
+	if vapidPublic == "" || vapidPrivate == "" {
+		log.Println("[Push] VAPID Keys belum diatur di .env. Notifikasi dibatalkan.")
+		return
+	}
+
+	payloadMap := map[string]string{
+		"title": "LOKARI " + strings.ToUpper(category) + ": " + title,
+		"body":  summary,
+		"url":   "/news",
+	}
+	b, _ := json.Marshal(payloadMap)
+
+	count := 0
+	for rows.Next() {
+		var ep, p256, auth string
+		if err := rows.Scan(&ep, &p256, &auth); err != nil {
+			continue
+		}
+
+		sub := &webpush.Subscription{
+			Endpoint: ep,
+			Keys: webpush.Keys{P256dh: p256, Auth: auth},
+		}
+
+		_, err := webpush.SendNotification(b, sub, &webpush.Options{
+			Subscriber:      "mailto:admin@lokari.my.id",
+			VAPIDPublicKey:  vapidPublic,
+			VAPIDPrivateKey: vapidPrivate,
+			TTL:             3600, // Aktif selama 1 jam
+		})
+		if err == nil {
+			count++
+		}
+	}
+	log.Printf("[Push] BERHASIL! Radar darurat menembakkan notifikasi ke %d perangkat warga!\n", count)
 }
