@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -24,7 +25,7 @@ func NewAIHandler(db *pgxpool.Pool) *AIHandler {
 	return &AIHandler{DB: db}
 }
 
-// GetAlert fetches NASA EONET data and uses DeepSeek to summarize it
+// GetAlert fetches NASA EONET data and summarizes it via the configured AI provider
 func (h *AIHandler) GetAlert(c *fiber.Ctx) error {
 	// 1. Fetch real-time NASA EONET data — dengan timeout & cek status code
 	nasaURL := "https://eonet.gsfc.nasa.gov/api/v3/events?category=volcanoes&status=open&limit=5"
@@ -50,7 +51,7 @@ func (h *AIHandler) GetAlert(c *fiber.Ctx) error {
 	}
 	rawData := string(bodyBytes)
 
-	// 2. Pass the raw JSON to our DeepSeek NLP Summarizer
+	// 2. Pass the raw JSON to our AI summarizer (provider dari AI_MODEL)
 	summary, err := ai.SummarizeAlert(context.Background(), rawData)
 	if err != nil {
 		if strings.Contains(err.Error(), "KUOTA_OPENROUTER_HABIS") {
@@ -63,8 +64,12 @@ func (h *AIHandler) GetAlert(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "AI gagal merangkum pesan"})
 	}
 
+	modelName := os.Getenv("AI_MODEL")
+	if modelName == "" {
+		modelName = "AI"
+	}
 	return c.JSON(fiber.Map{
-		"sumber": "NASA EONET (Diproses oleh AI DeepSeek)",
+		"sumber": "NASA EONET (Diproses oleh " + modelName + ")",
 		"pesan":  summary,
 	})
 }
@@ -102,7 +107,7 @@ func (h *AIHandler) SearchSemantic(c *fiber.Ctx) error {
 		}
 	}
 
-	// 1. Convert user's sentence to a vector embedding using HuggingFace
+	// 1. Convert user's sentence to a vector embedding using Cohere
 	embedding, err := ai.GenerateEmbedding(req.Query)
 	if err != nil {
 		if strings.Contains(err.Error(), "KUOTA_COHERE_HABIS") {

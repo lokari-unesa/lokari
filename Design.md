@@ -1,38 +1,91 @@
 # UI/UX & Design System - LOKARI
 
+> Menggambarkan antarmuka **sebagaimana diimplementasikan** (Oktober 2026).
+> Pengguna utama tetap warga Desa Jarak yang awam teknologi, sehingga prinsip
+> "Active and Simplified" dipertahankan.
+
 ## 1. Pendekatan Desain: "Active and Simplified UI/UX"
-Berdasarkan proposal akademik, pengguna utama LOKARI adalah masyarakat Desa Jarak yang mayoritas awam teknologi (gaptek). Oleh karena itu, antarmuka tidak boleh membingungkan. Desain difokuskan pada keaktifan sistem (menampilkan data darurat otomatis) dengan tampilan sesederhana mungkin (Simplified UI/UX).
 
-## 2. Kriteria Usability Goals (Sesuai Konsep TAM/UTAUT)
-Platform dievaluasi berdasarkan enam prinsip kenyamanan:
-1. **Kemudahan Dipelajari (Learnability):** Tata letak alami. Geser peta dan klik ikon tanpa perlu membaca petunjuk.
-2. **Efisiensi Penggunaan (Efficiency):** Informasi posko atau rute ditemukan maksimal dalam 1-2 klik.
-3. **Efektivitas Informasi (Effectiveness):** Peta menjawab kebutuhan darurat (visualisasi bahaya seketika).
-4. **Kerapian Visual & Kontras Warna (Clarity/Visibility):** 
-   - 🔴 **Merah:** Kawasan Rawan Bencana (KRB 3) & Jalur Lahar Aktif.
-   - 🟡 **Kuning:** Zona Waspada (KRB 2).
-   - 🟢 **Hijau:** Lokasi Posko Pengungsian yang aman.
-5. **Aksesibilitas Multi-Perangkat (Responsiveness):** Berbasis SvelteKit agar responsif di ponsel, tempat warga biasa mengakses internet.
-6. **Kejelasan Komponen Grafis:** Simbol *marker* peta sangat intuitif (Ikon tenda/balai desa untuk posko, ikon palang untuk kesehatan).
+Sistem proaktif menampilkan data darurat otomatis (status Kelud, berita,
+notifikasi push) dengan tampilan sesederhana mungkin: maksimal 1–2 klik
+menuju info posko atau rute, simbol peta intuitif, dan teks Bahasa Indonesia
+sehari-hari (dengan opsi English).
 
-## 3. Komponen Antarmuka Publik (3 Pilar Utama)
-Proposal mengamanatkan 3 komponen tampilan utama untuk halaman *front-end*:
+## 2. Kriteria Usability (TAM/UTAUT)
 
-### 3.1 Halaman Utama (Landing Page / Peta Penuh)
-- Seluruh layar (*full screen*) didominasi oleh kanvas peta interaktif Leaflet.
-- Bagian atas peta dilengkapi dengan Bilah Pencarian Pintar (*Semantic Search*) mengambang. Fitur ini dirancang seperti kolom *chat* agar warga bisa mengetik menggunakan bahasa sehari-hari.
+1. **Learnability:** geser peta dan klik ikon tanpa petunjuk; pencarian
+   menerima bahasa sehari-hari.
+2. **Efficiency:** info posko/rute ≤ 2 klik dari beranda atau peta bahaya.
+3. **Effectiveness:** peta menjawab kebutuhan darurat seketika (zona bahaya
+   + posko + rute dalam satu kanvas).
+4. **Clarity/Visibility** (warna aktual di kode):
+   - 🟠 `#EA580C` — zona bahaya.
+   - 🟢 `#16A34A` — posko pengungsian / tempat aman.
+   - 🔵 `#0284C7` — fasilitas kesehatan.
+   - 🟤 `#92400E` — jalur lahar.
+5. **Responsiveness:** SvelteKit responsif untuk ponsel; aset gambar WebP.
+6. **Kejelasan simbol:** marker warna + emoji per kategori (🏥 kesehatan,
+   🕌 ibadah, 🎓 pendidikan, 🏛️ balai/gedung).
 
-### 3.2 Jendela Informasi Pop-up (Interactive Pop-up)
-- Muncul ketika ikon posko/titik kumpul diklik.
-- Memuat foto kondisi lokasi, daya tampung pengungsi, dan tombol besar "Arahkan Rute Evakuasi" (*pgRouting*).
+Tambahan di luar proposal: **i18n ID/EN** (persist `lokari-locale`) dan
+**mode terang/gelap** (persist `lokari-theme`).
 
-### 3.3 Panel Imbauan Darurat (Alert Banner)
-- Terletak di atas peta atau muncul sebagai *pop-up toast*.
-- Memuat hasil ringkasan *AI NLP Summarizer* Golang. Contoh: "Status Gunung Waspada, jauhi aliran sungai."
-- Warna banner akan berubah (Hijau/Kuning/Merah) bergantung dari level peringatan.
+## 3. Struktur Halaman (6 halaman, bukan peta full-screen)
 
-## 4. Resolusi Konflik Konsep Awal
-*Catatan: Pada kesepakatan tim sebelumnya, terdapat rencana pembuatan Hero Carousel Youtube. Namun, karena proposal akademik mensyaratkan peta sebagai Landing Page utama demi efisiensi saat krisis, jika Carousel ingin dipertahankan, ia akan diposisikan sebagai halaman "Tentang/Edukasi" terpisah, atau sebuah layar *intro* (splash screen) statis sebelum memasuki peta.*
+Proposal memandatkan peta full-screen sebagai landing page. Realita: beranda
+adalah **dashboard keselamatan** — hero (judul + 2 tombol aksi) di atas,
+kartu status Kelud, aksi cepat, cuplikan peta, dan berita. Peta penuh hanya
+di halaman khusus.
+
+### 3.1 Beranda `/`
+
+Hero + **kartu status Gunung Kelud** (sumber kebenaran tunggal:
+`GET /api/kelud/status` dari `monitor_state`, bukan tebakan dari berita):
+
+| Level | Label | Warna kartu |
+|---|---|---|
+| `Level I (Normal)` | NORMAL | hijau (`safe`) |
+| `Level II (Waspada)` | WASPADA | kuning (`warning`) |
+| `Level III (Siaga)` | SIAGA | biru (`secondary`) |
+| `Level IV (Awas)` | AWAS | merah (`destructive`) |
+
+Belum ada state → status netral "MEMANTAU". Teks imbauan per level
+dwibahasa di store i18n (`status.normal` … `status.awas`).
+
+### 3.2 Peta Bahaya `/danger-map`
+
+Kanvas Leaflet + panel layer (bahaya/posko/kesehatan/lahar) + legenda.
+Klik marker → popover: nama, dusun, deskripsi, kapasitas, kategori,
+**rekomendasi faskes terdekat otomatis**, dan tombol rute ke
+`/safe-routes` (koordinat via query string).
+
+### 3.3 Jalur Evakuasi `/safe-routes`
+
+Panel asal (GPS/manual) + tujuan (dari pencarian AI atau link peta).
+Hasil rute memakai **3 state dari server** (`isSafe` + `status`):
+aman (ORS + `avoid_polygons`), fallback (OSRM tanpa penghindaran),
+bahaya. Tanpa ETA dari routing engine, ETA tampil "—" (bukan angka
+karangan). Hasil di-cache per pasangan koordinat agar tidak refetch.
+
+### 3.4 Kabar Kelud `/news` + Pencarian `/search`
+
+- `/news`: 20 berita terbaru (`GET /api/news`), filter kategori
+  (volcano/lahar/evac/weather/warning — slug EN dari DB, frontend
+  memetakan label ID + slug EN), timestamp relatif (zona WIB).
+- `/search`: pencarian semantik (`POST /api/search`, Top 15) + rerank
+  jarak di client; hasil teratas tertaut ke `/safe-routes`.
+
+### 3.5 Tentang `/about`
+
+Profil tim, kemitraan (Sagasitas, Desa Jarak), dan sumber data resmi
+(PVMBG MAGMA, BMKG, NASA EONET). Resolusi konflik lama: tidak ada Hero
+Carousel video — edukasi menyatu di halaman ini dan beranda.
+
+## 4. Isu terbuka
+
+Tile peta Google Satellite dipakai **tanpa API key** (melanggar ToS,
+rawan diblokir) — terlacak di TODO 5.2, belum diperbaiki.
 
 ---
-*Status: SELARAS DENGAN PROPOSAL AKADEMIK*
+
+*Status: SELARAS DENGAN IMPLEMENTASI (Okt 2026).*
