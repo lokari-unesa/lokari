@@ -9,7 +9,11 @@ Aplikasi ini dilengkapi dengan fitur:
 - **Rute Evakuasi Cerdas** yang secara otomatis menghindari Zona Merah.
 - **Peringatan Dini Bencana** yang menarik data *real-time* dari satelit NASA EONET.
 
-Proyek ini dibangun menggunakan **SvelteKit** (Frontend) dan **Go / Fiber** (Backend) dengan dukungan *database* **PostgreSQL (pgvector)**.
+Proyek ini dibangun menggunakan **SvelteKit** (Frontend) dan **Go / Fiber** (Backend) dengan dukungan *database* **PostgreSQL (PostGIS + pgvector)**.
+
+> **Dokumentasi teknis:** arsitektur, skema DB, dan kontrak API ada di [`docs/`](docs/README.md). PRD, desain, konteks proyek, dan rules di root sudah diselaraskan dengan implementasi (Okt 2026).
+>
+> **Catatan status fitur:** `GET /api/alert` hidup di backend tapi tidak dipanggil frontend mana pun (fitur mati) — kartu status beranda memakai `GET /api/kelud/status`. Rute evakuasi memakai OpenRouteService + fallback OSRM (bukan pgRouting di database); zona bahaya berupa lingkaran hardcoded di frontend, bukan poligon KRB dari DB. Detail deviasi dari proposal: [`General.md`](General.md) §3.
 
 ---
 

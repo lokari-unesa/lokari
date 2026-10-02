@@ -100,7 +100,7 @@
   - **File:** `backend/internal/worker/cron.go:19-30`
   - **Masalah:** Jobs dieksekusi langsung di `main` (`go fetcher.Fetch...`) DAN terjadwal setiap 6 jam; jika server start tepat di jam kelipatan 6, data ditarik 2×. Insert berita tidak dedup → `kabar_kelud` membengkak 2 baris/siklus selamanya.
   - **Perbaikan:** Jalankan sekali lewat cron (mis. `AddFunc` dengan waktu start segera), tambahkan dedup (UNIQUE constraint/cek judul+sumber+interval).
-  - **Status:** ✅ Start sekali via `c.Entry(entryID).Job.Run()` (tanpa pemanggilan ganda); dedup berita: `ON CONFLICT (sumber, judul) DO NOTHING` di fetcher + unique index `idx_kabar_kelud_sumber_judul` (dengan pembersihan duplikat lama) di `migrate_news.go`.
+  - **Status:** ✅ Start sekali via `c.Entry(entryID).Job.Run()` (tanpa pemanggilan ganda); dedup berita: `ON CONFLICT (sumber, judul) DO NOTHING` di fetcher + unique index `idx_kabar_kelud_sumber_judul` (dengan pembersihan duplikat lama) di `scripts/migrate.go` (dulu `migrate_news.go`, kini digabung).
 
 - [x] **3.7 JSON response AI bisa tidak valid secara konsisten**
   - **File:** `backend/internal/ai/nlp.go:121-127`
@@ -113,7 +113,7 @@
   - **File:** `backend/scripts/migrate.go:77`
   - **Masalah:** Menjalankan "migrasi" pada DB terisi = data hilang permanen (plus cascade). Script migrasi seharusnya idempotent & non-destruktif.
   - **Perbaikan:** Hapus `DROP TABLE`; pindahkan ke script seed/reset terpisah yang eksplisit meminta konfirmasi; evaluasi pemakaian tool migrasi (golang-migrate/atlas).
-  - **Status:** ✅ `migrate.go` non-destruktif & idempotent (`CREATE TABLE IF NOT EXISTS`); operasi destruktif dipisah ke `scripts/reset.go` (konfirmasi `y/N` → drop → migrasi → seed opsional). Evaluasi tool (golang-migrate/atlas): untuk skala ini script ringan yang terpisah jelas (migrate/reset/seed/backfill) lebih pas; framework migrasi tidak diadopsi.
+  - **Status:** ✅ `migrate.go` non-destruktif & idempotent (`CREATE TABLE IF NOT EXISTS`); operasi destruktif dipisah ke subcommand `scripts/migrate.go reset` (konfirmasi `y/N` → drop → migrasi → seed opsional). Evaluasi tool (golang-migrate/atlas): untuk skala ini script ringan yang terpisah jelas (migrate/reset/seed/backfill) lebih pas; framework migrasi tidak diadopsi.
 
 - [x] **4.2 Dimensi vektor inkonsisten: 1024 (kode) vs 384 (dokumen)**
   - **File:** `backend/scripts/migrate.go:88` (1024), `Schema.md:22` (384), `README.md:75` (384)
@@ -130,12 +130,12 @@
   - **File:** `backend/scripts/insert_hospitals.go:32-35`
   - **Masalah:** RSUD Gambiran & RSKK Pare punya `embedding NULL` → tidak pernah muncul di hasil semantic search.
   - **Perbaikan:** Generate embedding saat seed (atau backfill script).
-  - **Status:** ✅ `insert_hospitals.go` dihapus; `seed_claude.go` mengisi `embedding` via `ai.GenerateEmbedding`; skrip `backfill_embedding.go` melengkapi baris lama `embedding IS NULL` (idempotent, butuh `COHERE_API_KEY`). Tinggal dijalankan sekali di DB live bila masih ada baris tanpa vektor.
+  - **Status:** ✅ `insert_hospitals.go` dihapus (skrip digabung ke `scripts/seed.go`); `seed.go` mengisi `embedding` via `ai.GenerateEmbedding`; subcommand `seed.go backfill` melengkapi baris lama `embedding IS NULL` (idempotent, butuh `COHERE_API_KEY`). Tinggal dijalankan sekali di DB live bila masih ada baris tanpa vektor.
 
 - [x] **4.5 `cleanup.go` memakai `MIN(id_potensi::text)` untuk "baris paling awal"**
   - **File:** `backend/scripts/cleanup.go:33-38`
   - **Masalah:** `MIN` pada representasi teks UUID = urutan lexicographic, bukan urutan insert; berisiko menghapus baris yang salah.
-  - **Perbaikan:** Gunakan `created_at`/`ctid` atau kolom urutan insert. ✅ (`ROW_NUMBER() OVER (PARTITION BY nama_objek ORDER BY created_at, id_potensi)` di `cleanup.go`)
+  - **Perbaikan:** Gunakan `created_at`/`ctid` atau kolom urutan insert. ✅ (`ROW_NUMBER() OVER (PARTITION BY nama_objek ORDER BY created_at, id_potensi)`, kini sebagai `scripts/seed.go dedupe`; dulu `cleanup.go`)
 
 - [x] **4.6 Dockerfile DB rawan gagal build**
   - **File:** `backend/docker/Dockerfile-db`
@@ -186,11 +186,11 @@
   - **Perbaikan:** Multi-stage build + non-root user + production server; tambah healthcheck & `depends_on: condition: service_healthy`; buat `.env.example`.
   - **Status:** ✅ Backend prod: non-root (`USER app`) + `HEALTHCHECK` `/api/health`; compose: `depends_on db: condition: service_healthy` + healthcheck `pg_isready`; `env_file ./backend/.env` → `required: false`. Frontend Dockerfile tetap dev-only by design (produksi lewat Vercel/adapter-vercel), bukan anti-pattern selama tidak dipakai sebagai image produksi.
 
-- [ ] **6.4 Dokumentasi tidak sinkron dengan implementasi**
+- [x] **6.4 Dokumentasi tidak sinkron dengan implementasi**
   - **File:** `General.md:17,31`, `Architecture.md:15,19,54`, `Schema.md:41,84`, `Rules.md:9`, `README.md`
   - **Masalah:** Proposal mewajibkan port 6000/6001 & `pgRouting`, implementasi memakai 5180/5181 & routing eksternal ORS/OSRM. README menyebut DeepSeek/HuggingFace/NASA "tiap 1 jam" + `GET /api/alert`, padahal kode memakai env `AI_API_KEY`/`AI_BASE_URL`/`AI_MODEL`/`COHERE_API_KEY`, cron 6 jam, dan `/api/alert` **tidak pernah dipanggil frontend** (fitur mati).
   - **Perbaikan:** Update dokumen ke realita, atau hapus fitur yang tidak dipakai; buat `docs/` arsitektur aktual.
-  - **Status (WIP):** `README.md` sudah akurat (port 5180/5181, env `ORS_API_KEY`/`BACKEND_URL`/`AI_*`/`COHERE_API_KEY`, cron 6 jam, tanpa klaim DeepSeek/HF/1 jam). Yang belum: `General.md`/`Architecture.md`/`Rules.md`/`Schema.md` masih menyebut port 6000/6001 & `pgRouting`, `/api/alert` masih terdaftar di backend & README tapi tidak pernah dipanggil frontend (fitur mati), dan belum ada folder `docs/`.
+  - **Status:** ✅ Selesai Okt 2026 — `Architecture.md` + `Schema.md` pindah ke `docs/` (via `git mv`) dan ditulis ulang; `docs/API.md` + `docs/README.md` baru; `PRD.md`/`Design.md`/`General.md`/`Rules.md` ditulis ulang mengikuti implementasi (port 5180/5181, ORS/OSRM, lingkaran KRB hardcoded, cron hot 30 dtk + cold 6 jam, Vercel + Docker); `/api/alert` didokumentasikan sebagai fitur mati (endpoint belum dihapus — lihat 6.10, keputusan produk).
 
 - [x] **6.5 Konvensi env pecah & tidak ada `.env.example`**
   - **File:** `README.md:65-66` (menyuruh `DEEPSEEK_API_KEY`/`HF_TOKEN`), kode membaca key berbeda.
@@ -214,3 +214,14 @@
   - **File:** `backend/scripts/*` (6 skrip dengan `//go:build ignore`, duplikasi koneksi DB & load `.env` setiap file)
   - **Masalah:** Tanpa framework CLI/migrasi; mudah salah jalan & tidak konsisten (lihat 4.4, 4.5).
   - **Perbaikan:** Konsolidasi jadi satu command (mis. `cmd/seed` dengan subcommand) memakai koneksi/config bersama.
+  - **Status:** Sebagian membaik — skrip sudah digabung menjadi 3 file (`migrate.go`/`seed.go`/`ops.go` dengan subcommand `reset`/`backfill`/`dedupe`/`hot`/`cold`/`all`/`push`/`vapid`) + binary bundle `lokari-migrate`/`lokari-seed`/`lokari-ops` di image prod. Sisa: duplikasi koneksi DB & load `.env` antar file masih ada.
+
+- [ ] **6.10 Endpoint `/api/alert` fitur mati (keputusan produk)**
+  - **File:** `backend/internal/api/handlers/ai_handler.go` (`GetAlert`); tidak ada pemanggil di `frontend/src`
+  - **Masalah:** Endpoint hidup + kena rate limit, tetapi tak pernah dipanggil frontend mana pun. Sudah didokumentasikan sebagai fitur mati di `docs/API.md`.
+  - **Perbaikan:** Pilih satu — hapus endpoint + entri proxy `/api/alert` di `vite.config.ts`, atau sambungkan ke UI (banner/kartu) bila ringkasan AI real-time masih diinginkan.
+
+- [ ] **6.11 Tabel `kategori_layer` legacy (keputusan produk)**
+  - **File:** `backend/scripts/migrate.go`; tidak ada query di handler mana pun
+  - **Masalah:** Dibuat setiap migrasi tetapi tak pernah dibaca (kategori disimpan sebagai string di `potensi_bencana.kategori`). Sudah didokumentasikan LEGACY di `docs/Schema.md`.
+  - **Perbaikan:** Biarkan (opsi aman), atau drop tabel + hapus dari `migrate.go`/`resetDB` di migrasi berikut.
