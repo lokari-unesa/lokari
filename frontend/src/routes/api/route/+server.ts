@@ -52,7 +52,7 @@ export async function GET({ url, fetch }) {
       throw new Error("ORS_API_KEY tidak diset — langsung pakai fallback OSRM");
     }
 
-    const orsUrl = `https://api.openrouteservice.org/v2/directions/driving-car/geojson`;
+    const orsUrl = `https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson`;
     const body = {
       coordinates: [[sLng, sLat], [eLng, eLat]],
       options: {
