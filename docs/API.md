@@ -46,7 +46,7 @@ Query: `?start=lng,lat&end=lng,lat` — 4 angka wajib finite dalam rentang
 geografis, kalau tidak balas 400.
 
 1. **Strategi 1 — OpenRouteService**: `POST
-   https://api.openrouteservice.org/v2/directions/driving-car/geojson`
+   https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson`
    dengan `avoid_polygons` (poligon zona bahaya hardcoded di file yang sama).
    Butuh `ORS_API_KEY` (server-only). Hasil bertanda
    `{isSafe: true, status: "safe"}`.
